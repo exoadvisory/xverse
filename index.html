@@ -598,10 +598,10 @@ function upName(file) {
 }
 function upRow(job) {
   if (!job.el) { job.el = document.createElement("div"); $("queue").appendChild(job.el); }
-  const pct = job.state === "done" ? 100 : Math.round(100 * job.sent / (job.file.size || 1));
+  const pct = job.state === "done" ? 100 : Math.round(100 * Math.max(job.sent, job.live || 0) / (job.file.size || 1));
   job.el.className = "uprow" + (job.state === "done" ? " ok" : job.state === "error" ? " bad" : "");
   const st = job.state === "done" ? "Uploaded" : job.state === "error" ? `${esc(job.msg)}${job.retry ? ` · <button class="linkbtn" data-upretry>Retry</button>` : ""}`
-    : job.state === "waiting" ? "Waiting…" : (job.prep || !job.sent) ? LOADING : `${pct}%`;
+    : job.state === "waiting" ? "Waiting…" : (job.prep || !Math.max(job.sent, job.live || 0)) ? LOADING : `${pct}%`;
   job.el.innerHTML = `<span class="nm">${esc(job.name)}</span><span class="st">${st}</span><span class="bar"><i style="width:${job.state === "error" ? 0 : pct}%"></i></span>`;
   job.el._job = job;
 }
@@ -687,6 +687,42 @@ async function stripGps(file) {
     return new File([buf, file.slice(n0)], file.name, { type: file.type, lastModified: file.lastModified });
   } catch (e) { return file; }
 }
+function xhrPut(job, start, end) {
+  return new Promise((ok, no) => {
+    const x = new XMLHttpRequest();
+    x.open("PUT", job.url);
+    x.setRequestHeader("Content-Range", `bytes ${start}-${end - 1}/${job.file.size}`);
+    x.timeout = 300000;
+    x.upload.onprogress = e => { job.live = start + e.loaded; upRow(job); };
+    x.onload = () => ok({ code: x.status, range: x.getResponseHeader("Range") });
+    x.onerror = () => no({ error: "network", blocked: !job.directOk && start === 0 });   // first piece refused = page not allowed
+    x.ontimeout = () => no({ error: "timeout" });
+    x.send(job.file.slice(start, end));
+  });
+}
+async function directSend(job) {
+  if (job.resume) {                                         // after a failed piece: ask Drive (via Xverse) how much arrived
+    const r = await upCall("upstatus", { uploadId: job.uploadId });
+    if (!r.ok) throw r;
+    job.resume = false;
+    if (r.done) { job.sent = job.file.size; return; }
+    job.sent = r.received || 0;
+  }
+  while (job.sent < job.file.size) {
+    const end = Math.min(job.sent + XV.CHUNK, job.file.size);
+    let res;
+    try { res = await xhrPut(job, job.sent, end); }
+    catch (e) { job.resume = !e.blocked; job.live = job.sent; throw e; }
+    if (res.code === 200 || res.code === 201) { job.directOk = true; job.sent = job.file.size; return; }
+    if (res.code === 308) {
+      job.directOk = true;
+      job.sent = res.range ? +res.range.split("-")[1] + 1 : end;
+      upRow(job); continue;
+    }
+    if (res.code === 404 || res.code === 410) { job.url = null; job.uploadId = null; job.sent = 0; job.live = 0; throw { error: "upload_expired" }; }
+    job.resume = true; throw { error: "drive_" + res.code };
+  }
+}
 async function uploadOne(job) {
   job.state = "sending"; job.msg = ""; upRow(job);
   if (!job.ready) {
@@ -696,6 +732,27 @@ async function uploadOne(job) {
     job.ready = true; job.prep = false; upRow(job);
   }
   const meta = { name: job.name, mime: job.file.type, size: job.file.size, taken: job.taken || "", people: job.people || [], tags: job.tags || [] };
+  // Fast way: Xverse opens a one-file upload link and the phone sends the file straight to Google Drive.
+  // If Google won't accept it from the page, fall back to sending it through Xverse (slower).
+  if (job.direct !== false) {
+    if (!job.url) {
+      const r = await upCall("upstart", Object.assign({}, meta, { direct: true }));
+      if (!r.ok) throw r;
+      if (!r.url) { job.direct = false; job.uploadId = r.uploadId; }
+      else { job.url = r.url; job.uploadId = r.uploadId; job.sent = 0; }
+    }
+    if (job.url) {
+      try { await directSend(job); }
+      catch (e) {
+        if (e && e.blocked) { job.direct = false; job.url = null; job.uploadId = null; job.sent = 0; job.live = 0; return uploadOne(job); }
+        throw e;
+      }
+      const r = await upCall("upstatus", { uploadId: job.uploadId });     // Xverse checks with Drive and records it
+      if (!r.ok) throw r;
+      if (!r.done) { job.sent = r.received || 0; job.resume = true; throw { error: "incomplete" }; }
+      job.sent = job.file.size; return;
+    }
+  }
   if (!job.uploadId && job.file.size <= XV.CHUNK) {
     const r = await upCall("upstart", Object.assign(meta, { data: await readB64(job.file) }));
     if (!r.ok) throw r;
