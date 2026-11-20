@@ -117,6 +117,9 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
 .plist button.on b::after{content:" ✓";color:var(--rose2)}
 .sheet .btns{justify-content:flex-end;margin-top:12px}
 
+.ldots i{font-style:normal;opacity:0;animation:ld1 1.2s infinite steps(1,end)}
+.ldots i:nth-child(2){animation-name:ld2}.ldots i:nth-child(3){animation-name:ld3}
+@keyframes ld1{0%{opacity:0}25%,100%{opacity:1}}@keyframes ld2{0%,25%{opacity:0}50%,100%{opacity:1}}@keyframes ld3{0%,50%{opacity:0}75%,100%{opacity:1}}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 </style>
 </head>
@@ -182,6 +185,7 @@ const XV = {
   VIDEO_MAX: 300 * 1024 * 1024, VIDEO_SECS: 120, PHOTO_MAX: 100 * 1024 * 1024,
   CHUNK: 8 * 1024 * 1024
 };
+const LOADING = `<span class="ldots">Loading<i>.</i><i>.</i><i>.</i></span>`;
 const S = { pass: null, me: null, people: [], items: null, filter: { k: "all" }, gis: null, busy: false };
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -467,7 +471,7 @@ function loadOriginal(it, onPct) {
         put(k, r);
       }
     };
-    await Promise.all([worker(), worker(), worker()]);
+    await Promise.all(Array.from({ length: 6 }, worker));          // 6 at once: ~4x faster than one by one
     if (HDJOB.id !== it.id) throw new Error("cancelled");
     const blob = new Blob(parts, { type: mime || "application/octet-stream" });
     VW.hd = { id: it.id, blob, url: URL.createObjectURL(blob) };
@@ -477,11 +481,12 @@ function loadOriginal(it, onPct) {
   return HDJOB.p;
 }
 function b64bytes(s) { const bin = atob(s || ""); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
-function busyBtn(btn, label) { const s = btn.querySelector("span"); if (s) s.textContent = label; }
+function busyBtn(btn, label) { const s = btn.querySelector("span"); if (s) s.innerHTML = label; }
+const pctLabel = p => p > 0 ? `Loading ${p}%` : LOADING;
 
 function viewHd(btn) {
-  const it = VW.list[VW.i]; btn.disabled = true;
-  loadOriginal(it, p => busyBtn(btn, `Loading ${p}%`)).then(h => {
+  const it = VW.list[VW.i]; btn.disabled = true; busyBtn(btn, LOADING);
+  loadOriginal(it, p => busyBtn(btn, pctLabel(p))).then(h => {
     if (VW.list[VW.i] !== it) return;
     const img = $("vImg");
     img.onerror = () => { img.onerror = null; toast("This phone can't show this format. Use Save HD instead."); img.src = TH[it.id + "|1600"] || ""; };
@@ -490,16 +495,16 @@ function viewHd(btn) {
 }
 function playVideo() {
   const it = VW.list[VW.i], b = $("vPlay");
-  b.disabled = true; $("vPlayPct").textContent = "0%";
-  loadOriginal(it, p => $("vPlayPct").textContent = p + "%").then(h => {
+  b.disabled = true; $("vPlayPct").innerHTML = LOADING;
+  loadOriginal(it, p => $("vPlayPct").innerHTML = p > 0 ? p + "%" : LOADING).then(h => {
     if (VW.list[VW.i] !== it) return;
     b.hidden = true; b.disabled = false; $("vImg").hidden = true;
     const v = $("vVid"); v.hidden = false; v.src = h.url; v.play().catch(() => {});
   }).catch(() => { b.disabled = false; $("vPlayPct").textContent = ""; toast("Couldn't load the video. Try again"); });
 }
 function saveHd(btn) {
-  const it = VW.list[VW.i]; btn.disabled = true;
-  loadOriginal(it, p => busyBtn(btn, `Loading ${p}%`)).then(h => {
+  const it = VW.list[VW.i]; btn.disabled = true; busyBtn(btn, LOADING);
+  loadOriginal(it, p => busyBtn(btn, pctLabel(p))).then(h => {
     btn.disabled = false; busyBtn(btn, "Save HD");
     const file = new File([h.blob], it.name || ("xverse" + (it.video ? ".mp4" : ".jpg")), { type: h.blob.type });
     // iPhone: share sheet → "Save Image/Video" puts it in Photos. Elsewhere: a normal download.
@@ -596,7 +601,7 @@ function upRow(job) {
   const pct = job.state === "done" ? 100 : Math.round(100 * job.sent / (job.file.size || 1));
   job.el.className = "uprow" + (job.state === "done" ? " ok" : job.state === "error" ? " bad" : "");
   const st = job.state === "done" ? "Uploaded" : job.state === "error" ? `${esc(job.msg)}${job.retry ? ` · <button class="linkbtn" data-upretry>Retry</button>` : ""}`
-    : job.state === "waiting" ? "Waiting…" : job.prep ? "Preparing…" : `${pct}%`;
+    : job.state === "waiting" ? "Waiting…" : (job.prep || !job.sent) ? LOADING : `${pct}%`;
   job.el.innerHTML = `<span class="nm">${esc(job.name)}</span><span class="st">${st}</span><span class="bar"><i style="width:${job.state === "error" ? 0 : pct}%"></i></span>`;
   job.el._job = job;
 }
