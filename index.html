@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#15161f">
+<meta name="apple-mobile-web-app-title" content="Xverse">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<title>Xverse</title>
+<style>
+:root{--ink:#2f3240;--muted:#7d828c;--line:#e6dfd4;--card:#fffdf9;--bg:#f6f3ee;--rose:#c4877f;--rose2:#b8766d;--soft:#e8a197;--night:#15161f;--bad:#c0392b;--r:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+button{font:inherit;color:inherit}
+[hidden]{display:none!important}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.m{width:22px;height:22px;fill:currentColor;flex:none}
+
+/* header */
+.hdr{position:relative;height:calc(210px + env(safe-area-inset-top));overflow:hidden;background:var(--night)}
+.hdr .bg{position:absolute;inset:0;width:100%;height:100%}
+.lock{position:absolute;left:0;right:0;bottom:30px;display:flex;justify-content:center;align-items:flex-end}
+.lock svg{width:130px;height:121px;overflow:visible}
+.lock span{color:#fff;font-weight:800;font-size:24px;letter-spacing:7px;line-height:.74;margin-left:-4px;padding-bottom:2px}
+
+main{max-width:640px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px 18px;text-align:center}
+.card h3{margin:6px 0 4px;font-size:18px}.card p{margin:4px 0;color:var(--muted);font-size:14px}
+.card .who{font-size:13px;margin-top:10px}
+.card .ico{color:var(--rose2);display:flex;justify-content:center}.card .ico svg{width:34px;height:34px}
+#gbtn{display:flex;justify-content:center;margin-top:14px;min-height:44px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;padding:11px 18px;font-weight:600;font-size:15px;cursor:pointer;background:var(--ink);color:#fff}
+.btn.rose{background:var(--rose2)}.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.5}
+.btns{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.linkbtn{border:0;background:none;color:var(--rose2);font-weight:600;padding:0;cursor:pointer;font-size:inherit}
+
+/* toolbar */
+.up{display:flex;gap:10px;margin-bottom:12px}
+.up .btn{flex:1;border-radius:14px;padding:13px}
+.up .cam{flex:none;width:52px;padding:0;border-radius:14px}
+.vonly{font-size:13px;color:var(--muted);background:#efe9e0;border-radius:12px;padding:9px 12px;margin-bottom:12px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;margin:0 -14px;padding-left:14px;padding-right:14px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip svg{width:16px;height:16px}
+.count{font-size:13px;color:var(--muted);margin:0 0 8px}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;border-radius:12px;overflow:hidden}
+.tile{position:relative;aspect-ratio:1;border:0;padding:0;background:#e3dbd0;cursor:pointer;overflow:hidden}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .25s}
+.tile img.ld{opacity:1}
+.tile .vb{position:absolute;right:6px;bottom:6px;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.tile .vb svg{width:20px;height:20px}
+.foot{text-align:center;font-size:12px;color:var(--muted);margin:18px 0 6px}
+
+/* uploads */
+.q{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.uprow{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:13px;display:grid;grid-template-columns:1fr auto;gap:2px 10px}
+.uprow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uprow .st{color:var(--muted)}
+.uprow.ok .st{color:#2f8f6b}.uprow.bad .st{color:var(--bad)}
+.uprow .bar{grid-column:1/-1;height:4px;background:#efe9e0;border-radius:2px;overflow:hidden}
+.uprow .bar i{display:block;height:100%;background:var(--rose);transition:width .3s}
+
+/* soon */
+.soon{padding:40px 20px}
+
+/* bottom bar */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,253,249,.97);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+nav.tabs .row{max-width:640px;margin:0 auto;display:flex}
+nav.tabs button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:500;color:#8a8f99;position:relative;padding:2px 0 6px;cursor:pointer}
+nav.tabs button.on{color:var(--ink);font-weight:700}
+nav.tabs button.on::after{content:"";position:absolute;bottom:-2px;width:5px;height:5px;border-radius:50%;background:var(--rose)}
+nav.tabs button.dim{opacity:.45}
+nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#efe9e0;color:var(--muted);border-radius:6px;padding:1px 5px;font-weight:700}
+
+/* viewer */
+.viewer{position:fixed;inset:0;z-index:50;background:#0d0e13;display:flex;flex-direction:column;color:#fff}
+.vtop{display:flex;justify-content:space-between;align-items:center;padding:calc(8px + env(safe-area-inset-top)) 8px 8px}
+.vbtn{border:0;background:rgba(255,255,255,.1);color:#fff;border-radius:999px;height:42px;min-width:42px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600}
+.vbtn:disabled{opacity:.5}
+.vstage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:pan-y}
+.vstage img,.vstage video{max-width:100%;max-height:100%;object-fit:contain}
+.vnav{position:absolute;top:50%;transform:translateY(-50%);border:0;background:rgba(255,255,255,.12);color:#fff;width:40px;height:40px;border-radius:50%;cursor:pointer;display:none}
+@media (hover:hover){.vnav{display:flex;align-items:center;justify-content:center}}
+.vnav.l{left:10px}.vnav.r{right:10px}
+.vplay{position:absolute;inset:0;margin:auto;width:76px;height:76px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:12px;font-weight:700}
+.vplay svg{width:34px;height:34px}
+.vbot{padding:10px 14px calc(12px + env(safe-area-inset-bottom))}
+.vcred{font-size:13px;opacity:.85}
+.vtags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.vtags span{font-size:12px;border-radius:999px;padding:3px 9px;background:rgba(255,255,255,.12)}
+.vtags span.h{background:rgba(232,161,151,.25);color:#f3c6be}
+.vtags span.gone{opacity:.5}
+.vact{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.vact .del{margin-left:auto;background:rgba(192,57,43,.25)}
+
+/* sheet */
+.shade{position:fixed;inset:0;z-index:60;background:rgba(10,10,15,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:88vh;display:flex;flex-direction:column}
+.sheet h3{margin:0 0 2px;font-size:17px}.sheet .sub{margin:0 0 10px;color:var(--muted);font-size:13px}
+.sheet label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin:10px 0 6px;display:block}
+.sheet input{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+.picked{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.picked button{border:0;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600;background:var(--ink);color:#fff;cursor:pointer}
+.picked button.h{background:var(--rose2)}
+.plist{overflow-y:auto;flex:1;min-height:120px;margin-top:8px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.plist button{display:flex;justify-content:space-between;width:100%;border:0;border-bottom:1px solid #f1ece4;background:none;padding:10px 12px;text-align:left;cursor:pointer;font-size:15px}
+.plist button small{color:var(--muted);font-size:12px}
+.plist button.on{background:#f6efe9}
+.plist button.on b::after{content:" ✓";color:var(--rose2)}
+.sheet .btns{justify-content:flex-end;margin-top:12px}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+</style>
+</head>
+<body>
+<header class="hdr" aria-label="Xverse">
+<svg class="bg" viewBox="0 0 390 230" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#15161f"/><stop offset=".55" stop-color="#2f3240"/><stop offset="1" stop-color="#5e4a58"/></linearGradient></defs><rect width="390" height="230" fill="url(#sky)"/><circle cx="92.1" cy="22.5" r="1.3" fill="#fff" opacity="0.64"/><circle cx="35.1" cy="4.3" r="1.8" fill="#fff" opacity="0.90"/><circle cx="41.4" cy="46.8" r="0.6" fill="#fff" opacity="0.85"/><circle cx="333.3" cy="192.3" r="0.6" fill="#fff" opacity="0.86"/><circle cx="96.5" cy="61.2" r="1.8" fill="#fff" opacity="0.85"/><circle cx="2.8" cy="63.8" r="1" fill="#fff" opacity="0.86"/><circle cx="168.1" cy="35.2" r="1" fill="#fff" opacity="0.51"/><circle cx="311.0" cy="17.7" r="1.3" fill="#fff" opacity="0.73"/><circle cx="133.7" cy="217.9" r="0.8" fill="#fff" opacity="0.39"/><circle cx="356.3" cy="138.8" r="1.3" fill="#fff" opacity="0.52"/><circle cx="24.0" cy="50.0" r="1.8" fill="#fff" opacity="0.72"/><circle cx="179.0" cy="9.4" r="0.6" fill="#fff" opacity="0.89"/><circle cx="372.3" cy="160.6" r="1" fill="#fff" opacity="0.36"/><circle cx="112.7" cy="211.1" r="1.3" fill="#fff" opacity="0.87"/><circle cx="339.1" cy="148.6" r="0.6" fill="#fff" opacity="0.53"/><circle cx="148.8" cy="210.2" r="1" fill="#fff" opacity="0.69"/><circle cx="313.7" cy="217.9" r="1.8" fill="#fff" opacity="0.41"/><circle cx="382.9" cy="92.6" r="0.8" fill="#fff" opacity="0.42"/><circle cx="24.3" cy="161.1" r="1.8" fill="#fff" opacity="0.76"/><circle cx="58.4" cy="8.9" r="1.3" fill="#fff" opacity="0.70"/><circle cx="125.4" cy="7.8" r="1.8" fill="#fff" opacity="0.53"/><circle cx="388.8" cy="142.4" r="0.8" fill="#fff" opacity="0.64"/><circle cx="164.3" cy="54.3" r="0.8" fill="#fff" opacity="0.65"/><circle cx="12.3" cy="55.6" r="0.8" fill="#fff" opacity="0.67"/><circle cx="45.6" cy="124.5" r="0.6" fill="#fff" opacity="0.65"/><circle cx="36.2" cy="46.1" r="1.8" fill="#fff" opacity="0.89"/><circle cx="360.6" cy="73.5" r="1.3" fill="#fff" opacity="0.83"/><circle cx="359.9" cy="208.9" r="0.6" fill="#fff" opacity="0.87"/><circle cx="154.0" cy="135.4" r="1" fill="#fff" opacity="0.75"/><circle cx="23.6" cy="36.5" r="1.3" fill="#fff" opacity="0.69"/><circle cx="1.3" cy="201.5" r="0.6" fill="#fff" opacity="0.72"/><circle cx="100.4" cy="86.5" r="1.3" fill="#fff" opacity="0.88"/><circle cx="261.9" cy="72.2" r="1.3" fill="#fff" opacity="0.90"/><circle cx="171.5" cy="17.3" r="1.8" fill="#fff" opacity="0.42"/><circle cx="218.7" cy="56.1" r="0.6" fill="#fff" opacity="0.57"/><circle cx="326.7" cy="180.8" r="0.6" fill="#fff" opacity="0.93"/><circle cx="177.0" cy="44.9" r="1.3" fill="#fff" opacity="0.49"/><circle cx="189.8" cy="211.1" r="0.6" fill="#fff" opacity="0.40"/><circle cx="357.1" cy="174.4" r="1" fill="#fff" opacity="0.66"/><circle cx="169.2" cy="187.4" r="0.6" fill="#fff" opacity="0.73"/><circle cx="366.9" cy="139.2" r="1.3" fill="#fff" opacity="0.60"/><circle cx="311.4" cy="36.6" r="0.8" fill="#fff" opacity="0.46"/><circle cx="58.2" cy="108.0" r="1" fill="#fff" opacity="0.51"/><circle cx="379.8" cy="1.1" r="0.8" fill="#fff" opacity="0.35"/><circle cx="299.0" cy="215.4" r="0.6" fill="#fff" opacity="0.76"/><circle cx="237.7" cy="68.5" r="1.3" fill="#fff" opacity="0.82"/><circle cx="98.2" cy="130.5" r="1" fill="#fff" opacity="0.43"/><circle cx="32.2" cy="31.5" r="1.8" fill="#fff" opacity="0.46"/><circle cx="351.7" cy="81.3" r="1.8" fill="#fff" opacity="0.83"/><circle cx="145.0" cy="38.2" r="0.6" fill="#fff" opacity="0.71"/><circle cx="71.1" cy="215.7" r="1.8" fill="#fff" opacity="0.95"/><circle cx="30.0" cy="202.3" r="0.6" fill="#fff" opacity="0.45"/><circle cx="306.8" cy="144.3" r="1.3" fill="#fff" opacity="0.88"/><circle cx="206.6" cy="98.7" r="1.8" fill="#fff" opacity="0.59"/><circle cx="5.1" cy="40.2" r="1.8" fill="#fff" opacity="0.63"/><circle cx="151.6" cy="6.1" r="1.8" fill="#fff" opacity="0.39"/><circle cx="379.8" cy="215.8" r="1" fill="#fff" opacity="0.71"/><circle cx="121.8" cy="20.0" r="1" fill="#fff" opacity="0.64"/><circle cx="25.9" cy="201.9" r="0.6" fill="#fff" opacity="0.53"/></svg>
+<div class="lock"><svg viewBox="40 280 1030 960" aria-hidden="true"><defs><filter id="xg" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="22" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g transform="rotate(-18 555 760)"><path d="M-85,760 A640,190 0 0 1 1195,760" fill="none" stroke="#e8a197" stroke-opacity=".45" stroke-width="14"/></g><g filter="url(#xg)"><polygon points="50,468 257,468 536,801 329,801" fill="#fff"/><polygon points="329,897 536,897 260,1226 52,1226" fill="#fff"/><polygon points="609,926 862,1226 655,1226 506,1048" fill="#fff"/><polygon points="850,290 1055,290 630,793 528,672" fill="#e8a197"/></g><g transform="rotate(-18 555 760)"><path d="M1195,760 A640,190 0 0 1 -85,760" fill="none" stroke="#e8a197" stroke-opacity=".8" stroke-width="14"/><circle cx="1156" cy="825" r="40" fill="#f2d9a8"/><circle cx="24" cy="866" r="34" fill="#e8a197"/><circle cx="358" cy="579" r="26" fill="#fff"/></g></svg><span>VERSE</span></div>
+</header>
+
+<main>
+  <section id="tab-moments">
+    <div id="status"></div>
+    <div id="album" hidden>
+      <div id="vonly" class="vonly" hidden>You can view and save photos. Uploading opens once you join EXO.</div>
+      <div id="upbar" class="up" hidden>
+        <button class="btn rose" id="addBtn"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/></svg>Add photos &amp; videos</button>
+        <button class="btn ghost cam" id="camBtn" aria-label="Take a photo or video"><svg class="i" viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+        <input type="file" id="pick" accept="image/*,video/*" multiple hidden>
+        <input type="file" id="cam" accept="image/*,video/*" capture="environment" hidden>
+      </div>
+      <div id="queue" class="q"></div>
+      <div class="chips" id="chips"></div>
+      <p class="count" id="count"></p>
+      <div class="grid" id="grid"></div>
+      <div class="card" id="empty" hidden></div>
+      <p class="foot" id="foot"></p>
+    </div>
+  </section>
+  <section id="tab-events" hidden><div class="card soon"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2 2 4-4"/></svg></div><h3>Events are coming soon</h3><p>Register for EXO events right here.</p></div></section>
+  <section id="tab-memories" hidden><div class="card soon"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.9.4-3.7 3.2 1.1 4.8L12 13.9l-4.2 2.6 1.1-4.8-3.7-3.2 4.9-.4z"/><path d="M5 20.5h14"/></svg></div><h3>Memories are coming soon</h3><p>Monthly highlights and yearly EXO Memory cards.</p></div></section>
+</main>
+
+<nav class="tabs"><div class="row">
+  <button class="on" data-tab="moments"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/></svg>Moments</button>
+  <button class="dim" data-tab="events"><span class="soonlbl">Soon</span><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2 2 4-4"/></svg>Events</button>
+  <button class="dim" data-tab="memories"><span class="soonlbl">Soon</span><svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.9.4-3.7 3.2 1.1 4.8L12 13.9l-4.2 2.6 1.1-4.8-3.7-3.2 4.9-.4z"/><path d="M5 20.5h14"/></svg>Memories</button>
+</div></nav>
+
+<div class="viewer" id="viewer" hidden>
+  <div class="vtop">
+    <button class="vbtn" id="vClose" aria-label="Close"><svg class="m" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    <span id="vNum" style="font-size:13px;opacity:.8"></span>
+    <span style="width:42px"></span>
+  </div>
+  <div class="vstage" id="vStage">
+    <img id="vImg" alt="">
+    <video id="vVid" controls playsinline hidden></video>
+    <button class="vplay" id="vPlay" hidden aria-label="Play video"><svg class="m" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span id="vPlayPct"></span></button>
+    <button class="vnav l" id="vPrev" aria-label="Previous"><svg class="m" viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+    <button class="vnav r" id="vNext" aria-label="Next"><svg class="m" viewBox="0 0 24 24"><path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+  </div>
+  <div class="vbot">
+    <div class="vcred" id="vCred"></div>
+    <div class="vtags" id="vTags"></div>
+    <div class="vact" id="vAct"></div>
+  </div>
+</div>
+
+<script>
+const XV = {
+  exec: "{{EXEC}}",
+  clientId: "59034813519-lkjpdu54vmkhvrjqccc540v11cm0fghk.apps.googleusercontent.com",
+  VIDEO_MAX: 300 * 1024 * 1024, VIDEO_SECS: 120, PHOTO_MAX: 100 * 1024 * 1024,
+  CHUNK: 8 * 1024 * 1024
+};
+const S = { pass: null, me: null, people: [], items: null, filter: { k: "all" }, gis: null, busy: false };
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ICON = {
+  hd: `<svg class="m" viewBox="0 0 24 24"><path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 12H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm2-6h4c.55 0 1 .45 1 1v4c0 .55-.45 1-1 1h-4V9zm1.5 4.5h2v-3h-2v3z"/></svg>`,
+  dl: `<svg class="m" viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>`,
+  tag: `<svg class="m" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`,
+  del: `<svg class="m" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`,
+  play: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
+  person: `<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg>`,
+  lock: `<svg class="i" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>`,
+  wifi: `<svg class="i" viewBox="0 0 24 24"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r="1" fill="currentColor"/></svg>`,
+  photo: `<svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/></svg>`
+};
+function toast(msg) {
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+}
+
+/* ---------- server ---------- */
+function api(body, ms = 30000) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  return fetch(XV.exec, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body), signal: ctl.signal })
+    .then(r => r.json()).finally(() => clearTimeout(t));
+}
+const call = (action, extra, ms) => api(Object.assign({ action, token: S.pass }, extra || {}), ms);
+
+/* ---------- pass (30 days, kept on this phone) ---------- */
+function loadPass() {
+  try { const j = JSON.parse(localStorage.getItem("xv-pass") || "null"); if (j && j.exp - Date.now() > 60000) return j.pass; } catch (e) {}
+  return null;
+}
+function savePass(p, exp) { try { p ? localStorage.setItem("xv-pass", JSON.stringify({ pass: p, exp })) : localStorage.removeItem("xv-pass"); } catch (e) {} }
+function wipeLocal() {
+  ["xv-pass", "xv-items"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+  if (window.caches) caches.delete("xv-thumbs").catch(() => {});
+  Object.keys(TH).forEach(k => delete TH[k]);
+  S.pass = null; S.me = null; S.items = null;
+}
+
+/* ---------- status cards ---------- */
+function status(html) { $("status").innerHTML = html ? `<div class="card">${html}</div>` : ""; $("album").hidden = !!html; }
+function showSignIn(msg) {
+  status(`<div class="ico">${ICON.lock}</div><h3>Sign in to Xverse</h3><p>${msg || "Use the Google account that has the EXO Folder."}</p><div id="gbtn"><p>Loading Google sign-in…</p></div>`);
+  loadGis().then(() => {
+    const el = $("gbtn"); if (!el) return;
+    el.innerHTML = "";
+    google.accounts.id.renderButton(el, { theme: "filled_black", size: "large", shape: "pill", text: "signin_with", width: 240 });
+  }).catch(() => { const el = $("gbtn"); if (el) el.innerHTML = "<p>Couldn't load Google sign-in. Check your connection and refresh.</p>"; });
+}
+function loadGis() {
+  if (S.gis) return S.gis;
+  S.gis = new Promise((ok, no) => {
+    const s = document.createElement("script");
+    s.src = "https://accounts.google.com/gsi/client"; s.async = true;
+    const t = setTimeout(() => no(new Error("timeout")), 10000);
+    s.onload = () => {
+      clearTimeout(t);
+      google.accounts.id.initialize({ client_id: XV.clientId, auto_select: true, itp_support: true, ux_mode: "popup", callback: r => onCredential(r.credential) });
+      ok();
+    };
+    s.onerror = () => { clearTimeout(t); no(new Error("blocked")); };
+    document.head.appendChild(s);
+  });
+  S.gis.catch(() => { S.gis = null; });
+  return S.gis;
+}
+function onCredential(cred) {
+  status(`<div class="ico">${ICON.lock}</div><h3>Checking the guest list…</h3>`);
+  api({ action: "signin", idToken: cred }).then(r => {
+    if (!r.ok) return showSignIn("That sign-in didn't work. Please try again.");
+    if (r.access !== "ok") return notListed(r.email);
+    savePass(r.pass, r.exp); S.pass = r.pass;
+    openApp();
+  }).catch(() => offline(() => onCredential(cred)));
+}
+function notListed(email) {
+  wipeLocal();
+  status(`<div class="ico">${ICON.lock}</div><h3>Xverse is for EXOians</h3><p>Signed in with the wrong account? Switch to the one that has the EXO Folder.</p>
+    ${email ? `<p class="who">Signed in as ${esc(email)}</p>` : ""}<div class="btns"><button class="btn" data-switch>Switch account</button></div>`);
+}
+function offline(retry) {
+  status(`<div class="ico">${ICON.wifi}</div><h3>Couldn't reach Xverse</h3><p>Check your connection and try again.</p><div class="btns"><button class="btn" id="retry">Try again</button></div>`);
+  $("retry").onclick = retry;
+}
+function switchAccount() {
+  wipeLocal();
+  if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
+  showSignIn("Pick the Google account that has the EXO Folder.");
+}
+
+/* ---------- open ---------- */
+function openApp() {
+  if (!XV.exec || XV.exec.indexOf("{{") === 0) return status(`<div class="ico">${ICON.photo}</div><h3>Xverse is being set up</h3><p>Check back soon.</p>`);
+  S.pass = S.pass || loadPass();
+  if (!S.pass) return showSignIn();
+  let quiet = false;
+  if (!S.items) {
+    try { const c = JSON.parse(localStorage.getItem("xv-items") || "null"); if (c && c.items) { S.me = c.me; S.people = c.people || []; S.items = c.items; render(); quiet = true; } } catch (e) {}
+  }
+  if (!quiet) status(`<div class="ico">${ICON.photo}</div><h3>Opening Moments…</h3>`);
+  call("open").then(r => {
+    if (!r.ok) {
+      if (r.error === "invalid_token") { wipeLocal(); return showSignIn("Your sign-in expired. Please sign in again."); }
+      if (r.error === "no_access") return notListed(r.email);
+      throw new Error(r.error);
+    }
+    S.me = r.me; S.people = r.people || []; S.items = r.items || [];
+    try { localStorage.setItem("xv-items", JSON.stringify({ me: S.me, people: S.people, items: S.items })); } catch (e) {}
+    render();
+  }).catch(() => { if (!quiet) offline(openApp); });
+}
+
+/* ---------- album ---------- */
+const alias = full => { const p = S.people.find(x => x.n === full); return p ? p.a : full; };
+const isPerson = full => S.people.some(x => x.n === full);
+function filtered() {
+  const f = S.filter, it = S.items || [];
+  if (f.k === "me") return it.filter(x => S.me && x.people.includes(S.me.name));
+  if (f.k === "mine") return it.filter(x => x.mine);
+  if (f.k === "tag") return it.filter(x => x.tags.includes(f.v));
+  if (f.k === "person") return it.filter(x => x.people.includes(f.v));
+  return it;
+}
+function render() {
+  status("");
+  const me = S.me || {};
+  $("upbar").hidden = !me.canUpload;
+  $("vonly").hidden = me.canUpload !== false;
+  // filter chips: All · Photos of me · My uploads · People · top hashtags
+  const tagCount = {};
+  (S.items || []).forEach(x => x.tags.forEach(t => tagCount[t] = (tagCount[t] || 0) + 1));
+  const tops = Object.keys(tagCount).sort((a, b) => tagCount[b] - tagCount[a] || a.localeCompare(b)).slice(0, 12);
+  const f = S.filter, on = (k, v) => f.k === k && (v === undefined || f.v === v) ? " on" : "";
+  let chips = `<button class="chip${on("all")}" data-f="all">All</button>`;
+  if (me.role === "member") chips += `<button class="chip${on("me")}" data-f="me">Photos of me</button>`;
+  if (me.canUpload) chips += `<button class="chip${on("mine")}" data-f="mine">My uploads</button>`;
+  chips += f.k === "person" ? `<button class="chip on" data-f="all">${ICON.person}${esc(alias(f.v))} ×</button>` : `<button class="chip" data-people>${ICON.person}People</button>`;
+  if (f.k === "tag" && !tops.includes(f.v)) tops.unshift(f.v);
+  chips += tops.map(t => `<button class="chip${on("tag", t)}" data-f="tag" data-v="${esc(t)}">#${esc(t)}</button>`).join("");
+  $("chips").innerHTML = chips;
+
+  const list = filtered();
+  const v = list.filter(x => x.video).length, p = list.length - v;
+  const part = (n, w) => n ? `${n} ${w}${n === 1 ? "" : "s"}` : "";
+  $("count").textContent = [part(p, "photo"), part(v, "video")].filter(Boolean).join(" · ");
+  $("foot").innerHTML = `Signed in as ${esc(me.alias || "")} (${esc(me.email || "")}) · <button class="linkbtn" data-switch>Switch account</button>`;
+  const empty = $("empty");
+  if (!list.length) {
+    $("grid").innerHTML = "";
+    const msg = f.k === "all" ? (me.canUpload ? "No moments yet. Be the first to add one!" : "No moments yet.")
+      : f.k === "me" ? "No photos of you yet. When someone tags you, they show up here."
+      : f.k === "mine" ? "You haven't added any yet." : "Nothing here yet.";
+    empty.innerHTML = `<div class="ico">${ICON.photo}</div><p>${msg}</p>`; empty.hidden = false;
+  } else {
+    empty.hidden = true;
+    $("grid").innerHTML = list.map((it, i) => `<button class="tile" data-i="${i}" data-id="${esc(it.id)}" aria-label="${it.video ? "Video" : "Photo"} by ${esc(it.by)}"><img alt="">${it.video ? `<span class="vb">${ICON.play}</span>` : ""}</button>`).join("");
+    $("grid").querySelectorAll(".tile").forEach(t => {
+      const u = TH[t.dataset.id + "|400"];
+      if (u) setImg(t.querySelector("img"), u); else observer().observe(t);
+    });
+  }
+  $("album").hidden = false;
+}
+function setImg(img, url) { img.onload = () => img.classList.add("ld"); img.src = url; }
+
+/* ---------- small images (cached on this phone) ---------- */
+const TH = {};
+const tKey = (id, size) => `./__xv/${encodeURIComponent(id)}-${size}`;
+function thumbGet(id, size) {
+  if (!window.caches) return Promise.resolve(null);
+  return caches.open("xv-thumbs").then(c => c.match(tKey(id, size))).then(r => r ? r.blob().then(b => URL.createObjectURL(b)) : null).catch(() => null);
+}
+function thumbPut(id, size, url) {
+  if (!window.caches) return;
+  fetch(url).then(r => r.blob()).then(b => caches.open("xv-thumbs").then(c => c.put(tKey(id, size), new Response(b, { headers: { "Content-Type": b.type || "image/jpeg" } })))).catch(() => {});
+}
+let _obs = null, _q = [], _qt = null;
+function observer() {
+  if (_obs) return _obs;
+  _obs = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) { _obs.unobserve(e.target); _q.push(e.target.dataset.id); } });
+    clearTimeout(_qt); _qt = setTimeout(flush, 80);
+  }, { rootMargin: "400px 0px" });
+  return _obs;
+}
+function flush() {
+  while (_q.length) {
+    const ids = _q.splice(0, 12);
+    getThumbs(ids, 400).then(() => ids.forEach(id => {
+      const u = TH[id + "|400"];
+      document.querySelectorAll(`.tile[data-id="${id}"] img`).forEach(img => u && setImg(img, u));
+    }));
+  }
+}
+const byId = id => (S.items || []).find(x => x.id === id);
+function getThumbs(ids, size) {
+  const want = ids.filter(id => !TH[id + "|" + size]);
+  if (!want.length) return Promise.resolve();
+  return Promise.all(want.map(id => thumbGet(id, size).then(u => { if (u) TH[id + "|" + size] = u; }))).then(() => {
+    const need = want.filter(id => !TH[id + "|" + size]);
+    if (!need.length) return;
+    return call("thumbs", { ids: need, size }).then(r => {
+      if (r.ok) return Promise.all(Object.keys(r.thumbs).map(id => upright(r.thumbs[id], byId(id)).then(u => { TH[id + "|" + size] = u; thumbPut(id, size, u); })));
+      if (r.error === "invalid_token") { closeViewer(); wipeLocal(); showSignIn("Your sign-in expired. Please sign in again."); }
+    });
+  }).catch(() => {});
+}
+// Drive's small copies can lose a phone photo's "turn this way" tag; turn them upright on a canvas.
+function upright(url, it) {
+  const turns = it ? (it.rot || 0) % 4 : 0;
+  if (!turns || !it.pw || !it.ph) return Promise.resolve(url);
+  return new Promise(ok => {
+    const im = new Image();
+    im.onload = () => {
+      const w = im.naturalWidth, h = im.naturalHeight, stored = (w >= h) === (it.pw >= it.ph);
+      if (!stored) return ok(url);
+      const c = document.createElement("canvas"), odd = turns % 2 === 1;
+      c.width = odd ? h : w; c.height = odd ? w : h;
+      const g = c.getContext("2d"); g.translate(c.width / 2, c.height / 2); g.rotate(turns * Math.PI / 2); g.drawImage(im, -w / 2, -h / 2);
+      ok(c.toDataURL("image/jpeg", 0.92));
+    };
+    im.onerror = () => ok(url); im.src = url;
+  });
+}
+
+/* ---------- viewer ---------- */
+const VW = { i: 0, list: [], hd: null };            // hd = { id, blob, url }
+const fmtWhen = iso => iso ? new Date(iso).toLocaleString("en-SG", { timeZone: "Asia/Singapore", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+function openViewer(i) {
+  VW.list = filtered(); VW.i = i;
+  $("viewer").hidden = false; document.body.style.overflow = "hidden";
+  showItem();
+}
+function closeViewer() {
+  if ($("viewer").hidden) return;
+  $("viewer").hidden = true; document.body.style.overflow = "";
+  stopVideo(); dropHd();
+}
+function dropHd() { if (VW.hd && VW.hd.url) URL.revokeObjectURL(VW.hd.url); VW.hd = null; HDJOB.id = null; }
+function stopVideo() { const v = $("vVid"); v.pause(); v.removeAttribute("src"); v.load(); v.hidden = true; }
+function showItem() {
+  const it = VW.list[VW.i]; if (!it) return closeViewer();
+  stopVideo(); dropHd();
+  $("vNum").textContent = `${VW.i + 1} / ${VW.list.length}`;
+  const img = $("vImg"); img.hidden = false;
+  img.src = TH[it.id + "|1600"] || TH[it.id + "|400"] || "";
+  if (!TH[it.id + "|1600"]) getThumbs([it.id], 1600).then(() => { if (VW.list[VW.i] === it && TH[it.id + "|1600"] && !VW.hd) img.src = TH[it.id + "|1600"]; });
+  const nx = VW.list[VW.i + 1]; if (nx) setTimeout(() => getThumbs([nx.id], 1600), 500);
+  $("vPlay").hidden = !it.video; $("vPlayPct").textContent = "";
+  $("vCred").textContent = `${it.video ? "Video" : "Photo"} by ${it.by} · ${fmtWhen(it.taken || it.at)}`;
+  $("vTags").innerHTML = it.people.map(n => `<span class="${isPerson(n) ? "" : "gone"}">${esc(alias(n))}</span>`).join("") + it.tags.map(t => `<span class="h">#${esc(t)}</span>`).join("");
+  const mb = it.size ? ` · ${(it.size / 1048576).toFixed(it.size > 10485760 ? 0 : 1)} MB` : "";
+  $("vAct").innerHTML = (it.video ? "" : `<button class="vbtn" data-hd>${ICON.hd}<span>View HD</span></button>`)
+    + `<button class="vbtn" data-dl>${ICON.dl}<span>Save HD${mb}</span></button>`
+    + (it.canEdit ? `<button class="vbtn" data-tagedit aria-label="Tag people">${ICON.tag}<span>Tag</span></button><button class="vbtn del" data-del aria-label="Delete">${ICON.del}</button>` : "");
+  $("vPrev").style.visibility = VW.i > 0 ? "" : "hidden";
+  $("vNext").style.visibility = VW.i < VW.list.length - 1 ? "" : "hidden";
+}
+function step(d) { const n = VW.i + d; if (n < 0 || n >= VW.list.length) return; VW.i = n; showItem(); }
+
+// The original file, fetched in 8 MB pieces through Xverse (FCs have no Drive access).
+const HDJOB = { id: null, p: null };
+function loadOriginal(it, onPct) {
+  if (VW.hd && VW.hd.id === it.id) return Promise.resolve(VW.hd);
+  if (HDJOB.id === it.id) return HDJOB.p;
+  HDJOB.id = it.id;
+  HDJOB.p = (async () => {
+    const parts = []; let total = it.size || 0, got = 0, mime = it.mime;
+    const first = await call("hd", { id: it.id, part: 0 }, 120000);
+    if (!first.ok) throw new Error(first.error);
+    total = first.total || total; mime = first.mime || mime;
+    const n = Math.max(1, Math.ceil(total / XV.CHUNK));
+    const put = (k, r) => { parts[k] = b64bytes(r.data); got += parts[k].length; onPct && onPct(Math.min(99, Math.round(100 * got / (total || 1)))); };
+    put(0, first);
+    let next = 1;
+    const worker = async () => {
+      while (next < n) {
+        const k = next++;
+        let r;
+        for (let t = 0; t < 3; t++) { try { r = await call("hd", { id: it.id, part: k }, 120000); if (r.ok) break; } catch (e) { r = null; } await new Promise(w => setTimeout(w, 1200 * (t + 1))); }
+        if (!r || !r.ok) throw new Error("hd_failed");
+        put(k, r);
+      }
+    };
+    await Promise.all([worker(), worker(), worker()]);
+    if (HDJOB.id !== it.id) throw new Error("cancelled");
+    const blob = new Blob(parts, { type: mime || "application/octet-stream" });
+    VW.hd = { id: it.id, blob, url: URL.createObjectURL(blob) };
+    return VW.hd;
+  })();
+  HDJOB.p.catch(() => { if (HDJOB.id === it.id) HDJOB.id = null; });
+  return HDJOB.p;
+}
+function b64bytes(s) { const bin = atob(s || ""); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
+function busyBtn(btn, label) { const s = btn.querySelector("span"); if (s) s.textContent = label; }
+
+function viewHd(btn) {
+  const it = VW.list[VW.i]; btn.disabled = true;
+  loadOriginal(it, p => busyBtn(btn, `Loading ${p}%`)).then(h => {
+    if (VW.list[VW.i] !== it) return;
+    const img = $("vImg");
+    img.onerror = () => { img.onerror = null; toast("This phone can't show this format. Use Save HD instead."); img.src = TH[it.id + "|1600"] || ""; };
+    img.src = h.url; busyBtn(btn, "HD"); btn.disabled = false;
+  }).catch(() => { btn.disabled = false; busyBtn(btn, "View HD"); toast("Couldn't load the original. Try again"); });
+}
+function playVideo() {
+  const it = VW.list[VW.i], b = $("vPlay");
+  b.disabled = true; $("vPlayPct").textContent = "0%";
+  loadOriginal(it, p => $("vPlayPct").textContent = p + "%").then(h => {
+    if (VW.list[VW.i] !== it) return;
+    b.hidden = true; b.disabled = false; $("vImg").hidden = true;
+    const v = $("vVid"); v.hidden = false; v.src = h.url; v.play().catch(() => {});
+  }).catch(() => { b.disabled = false; $("vPlayPct").textContent = ""; toast("Couldn't load the video. Try again"); });
+}
+function saveHd(btn) {
+  const it = VW.list[VW.i]; btn.disabled = true;
+  loadOriginal(it, p => busyBtn(btn, `Loading ${p}%`)).then(h => {
+    btn.disabled = false; busyBtn(btn, "Save HD");
+    const file = new File([h.blob], it.name || ("xverse" + (it.video ? ".mp4" : ".jpg")), { type: h.blob.type });
+    // iPhone: share sheet → "Save Image/Video" puts it in Photos. Elsewhere: a normal download.
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file] }).catch(err => { if (err && err.name === "NotAllowedError") busyBtn(btn, "Tap to save"); });
+      return;
+    }
+    const a = document.createElement("a"); a.href = h.url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+  }).catch(() => { btn.disabled = false; busyBtn(btn, "Save HD"); toast("Couldn't load the original. Try again"); });
+}
+function deleteItem(btn) {
+  const it = VW.list[VW.i];
+  if (!confirm(`Delete this ${it.video ? "video" : "photo"} from Xverse for everyone?`)) return;
+  btn.disabled = true;
+  call("delete", { id: it.id }).then(r => {
+    if (!r.ok) throw new Error(r.error);
+    S.items = S.items.filter(x => x.id !== it.id);
+    closeViewer(); render(); toast("Deleted");
+  }).catch(() => { btn.disabled = false; toast("Couldn't delete. Try again"); });
+}
+
+/* ---------- tag sheet (upload batch or one photo) ---------- */
+function tagSheet({ title, sub, people, tags, okLabel, skipLabel }) {
+  return new Promise(done => {
+    const sel = new Set(people || []), hs = [...(tags || [])];
+    const shade = document.createElement("div"); shade.className = "shade";
+    shade.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p class="sub">${esc(sub || "")}</p>
+      <label>People</label><input id="tsQ" placeholder="Search names" autocomplete="off"><div class="picked" id="tsP"></div><div class="plist" id="tsL"></div>
+      <label>Hashtags</label><input id="tsH" placeholder="#cedli #teamlunch" autocomplete="off" autocapitalize="none"><div class="picked" id="tsHs"></div>
+      <div class="btns">${skipLabel ? `<button class="btn ghost" data-ts="skip">${esc(skipLabel)}</button>` : `<button class="btn ghost" data-ts="cancel">Cancel</button>`}<button class="btn rose" data-ts="ok">${esc(okLabel)}</button></div></div>`;
+    document.body.appendChild(shade);
+    const q = shade.querySelector("#tsQ"), L = shade.querySelector("#tsL"), P = shade.querySelector("#tsP"), H = shade.querySelector("#tsH"), HS = shade.querySelector("#tsHs");
+    const draw = () => {
+      const s = q.value.trim().toLowerCase();
+      L.innerHTML = S.people.filter(p => !s || p.a.toLowerCase().includes(s) || p.n.toLowerCase().includes(s))
+        .map(p => `<button class="${sel.has(p.n) ? "on" : ""}" data-n="${esc(p.n)}"><b>${esc(p.a)}</b><small>${p.a === p.n ? "" : esc(p.n)}</small></button>`).join("") || `<p style="padding:10px;color:var(--muted);font-size:14px;margin:0">No match</p>`;
+      P.innerHTML = [...sel].map(n => `<button data-rm="${esc(n)}">${esc(alias(n))} ×</button>`).join("");
+      HS.innerHTML = hs.map(t => `<button class="h" data-rmh="${esc(t)}">#${esc(t)} ×</button>`).join("");
+    };
+    const addTags = () => {
+      H.value.split(/[\s,]+/).map(t => t.toLowerCase().replace(/^#+/, "").replace(/[^a-z0-9_]/g, "").slice(0, 30)).filter(Boolean)
+        .forEach(t => { if (!hs.includes(t) && hs.length < 10) hs.push(t); });
+      H.value = ""; draw();
+    };
+    H.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " " || e.key === ",") { e.preventDefault(); addTags(); } });
+    H.addEventListener("blur", addTags);
+    q.addEventListener("input", draw);
+    shade.addEventListener("click", e => {
+      const b = e.target.closest("button");
+      if (e.target === shade) { shade.remove(); return done(null); }
+      if (!b) return;
+      if (b.dataset.n) { sel.has(b.dataset.n) ? sel.delete(b.dataset.n) : sel.add(b.dataset.n); draw(); }
+      else if (b.dataset.rm) { sel.delete(b.dataset.rm); draw(); }
+      else if (b.dataset.rmh) { hs.splice(hs.indexOf(b.dataset.rmh), 1); draw(); }
+      else if (b.dataset.ts) {
+        addTags(); shade.remove();
+        done(b.dataset.ts === "cancel" ? null : b.dataset.ts === "skip" ? { people: [], tags: [] } : { people: [...sel], tags: hs });
+      }
+    });
+    draw();
+  });
+}
+async function editTags(btn) {
+  const it = VW.list[VW.i];
+  const r = await tagSheet({ title: "Tag this " + (it.video ? "video" : "photo"), sub: "Who's in it, and what's it about?", people: it.people, tags: it.tags, okLabel: "Save" });
+  if (!r) return;
+  btn.disabled = true;
+  call("tag", { id: it.id, people: r.people, tags: r.tags }).then(x => {
+    if (!x.ok) throw new Error(x.error);
+    it.people = x.people; it.tags = x.tags;
+    try { localStorage.setItem("xv-items", JSON.stringify({ me: S.me, people: S.people, items: S.items })); } catch (e) {}
+    showItem(); render(); toast("Saved");
+  }).catch(() => { btn.disabled = false; toast("Couldn't save. Try again"); });
+}
+
+/* ---------- uploads ---------- */
+const UP = { queue: [], running: false };
+function videoSeconds(file) {
+  return new Promise(ok => {
+    const v = document.createElement("video"), url = URL.createObjectURL(file);
+    const done = s => { URL.revokeObjectURL(url); ok(s || 0); };
+    v.preload = "metadata"; v.onloadedmetadata = () => done(v.duration); v.onerror = () => done(0);
+    setTimeout(() => done(0), 8000); v.src = url;
+  });
+}
+function upName(file) {
+  if (!/^(image|capturedvideo|video)\.\w+$/i.test(file.name)) return file.name;
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const t = new Date().toLocaleString("sv-SE", { timeZone: "Asia/Singapore" }).replace(/\D/g, "").slice(0, 14);
+  return `Xverse_${t.slice(0, 8)}_${t.slice(8)}.${ext}`;
+}
+function upRow(job) {
+  if (!job.el) { job.el = document.createElement("div"); $("queue").appendChild(job.el); }
+  const pct = job.state === "done" ? 100 : Math.round(100 * job.sent / (job.file.size || 1));
+  job.el.className = "uprow" + (job.state === "done" ? " ok" : job.state === "error" ? " bad" : "");
+  const st = job.state === "done" ? "Uploaded" : job.state === "error" ? `${esc(job.msg)}${job.retry ? ` · <button class="linkbtn" data-upretry>Retry</button>` : ""}`
+    : job.state === "waiting" ? "Waiting…" : job.prep ? "Preparing…" : `${pct}%`;
+  job.el.innerHTML = `<span class="nm">${esc(job.name)}</span><span class="st">${st}</span><span class="bar"><i style="width:${job.state === "error" ? 0 : pct}%"></i></span>`;
+  job.el._job = job;
+}
+async function addUploads(files) {
+  const ok = [];
+  for (const file of files) {
+    const job = { file, name: upName(file), sent: 0, state: "waiting", uploadId: null };
+    const isVideo = file.type.startsWith("video/");
+    if (!file.type.startsWith("image/") && !isVideo) { job.state = "error"; job.msg = "Not a photo or video"; }
+    else if (isVideo && file.size > XV.VIDEO_MAX) { job.state = "error"; job.msg = "Over 300 MB. Please trim it"; }
+    else if (isVideo && (await videoSeconds(file)) > XV.VIDEO_SECS + 1) { job.state = "error"; job.msg = "Over 2 min. Please trim it"; }
+    else if (!isVideo && file.size > XV.PHOTO_MAX) { job.state = "error"; job.msg = "Too big"; }
+    if (job.state === "error") upRow(job); else ok.push(job);
+  }
+  if (!ok.length) return;
+  const n = ok.length, vids = ok.filter(j => j.file.type.startsWith("video/")).length;
+  const what = vids === n ? (n === 1 ? "this video" : `these ${n} videos`) : vids ? `these ${n} photos & videos` : (n === 1 ? "this photo" : `these ${n} photos`);
+  const t = await tagSheet({ title: `Who's in ${what}?`, sub: "Tag people and add hashtags, or skip. You can change it later.", okLabel: `Upload${n > 1 ? " " + n : ""}`, skipLabel: "Skip tags" });
+  if (!t) return;
+  ok.forEach(j => { j.people = t.people; j.tags = t.tags; upRow(j); UP.queue.push(j); });
+  runUploads();
+}
+function readB64(blob) {
+  return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1] || ""); r.onerror = () => no(r.error); r.readAsDataURL(blob); });
+}
+async function upCall(action, body, tries = 3) {
+  for (let i = 0; ; i++) {
+    try {
+      const r = await call(action, body, 180000);
+      if (r.ok || i >= tries - 1 || ["invalid_token", "no_access", "view_only", "too_big", "not_media"].includes(r.error)) return r;
+    } catch (e) { if (i >= tries - 1) throw e; }
+    await new Promise(w => setTimeout(w, 1500 * (i + 1)));
+  }
+}
+// When a photo was taken (JPEG info), read from the original file.
+async function photoTaken(file) {
+  try {
+    if (!/jpe?g/i.test(file.type)) return "";
+    const v = new DataView(await file.slice(0, 256 * 1024).arrayBuffer());
+    const x = exifAt(v); if (!x) return "";
+    const ex = x.tags(x.u32(x.ifd0[0x8769] ? x.ifd0[0x8769] + 8 : -1));
+    const val = tag => ex[tag] ? x.str(x.u32(ex[tag] + 8), x.u32(ex[tag] + 4)) : "";
+    const m = /^(\d{4}):(\d\d):(\d\d) (\d\d):(\d\d):(\d\d)/.exec(val(0x9003)); if (!m) return "";
+    const off = val(0x9011), tz = /^[+-]\d\d:\d\d$/.test(off) ? off : "+08:00";
+    const iso = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}${tz}`;
+    return isNaN(Date.parse(iso)) ? "" : new Date(iso).toISOString();
+  } catch (e) { return ""; }
+}
+function exifAt(v) {
+  if (v.getUint16(0) !== 0xFFD8) return null;
+  let o = 2;
+  while (o + 4 < v.byteLength) {
+    const mk = v.getUint16(o), len = v.getUint16(o + 2);
+    if (mk === 0xFFE1 && v.getUint32(o + 4) === 0x45786966) {
+      const t = o + 10, le = v.getUint16(t) === 0x4949;
+      const u16 = x => v.getUint16(t + x, le), u32 = x => x < 0 ? 0 : v.getUint32(t + x, le);
+      const str = (x, n) => { let r = ""; for (let i = 0; i < n; i++) { const c = v.getUint8(t + x + i); if (!c) break; r += String.fromCharCode(c); } return r; };
+      const tags = ifd => { const out = {}; if (!ifd) return out; const n = u16(ifd); for (let i = 0; i < n; i++) { const e = ifd + 2 + i * 12; out[u16(e)] = e; } return out; };
+      const ifd0 = tags(u32(4));
+      return { t, le, u16, u32, str, tags, ifd0 };
+    }
+    if ((mk & 0xFF00) !== 0xFF00) return null;
+    o += 2 + len;
+  }
+  return null;
+}
+// Remove the phone's location from a JPEG without touching the picture: the GPS block and its values are zeroed in place.
+async function stripGps(file) {
+  try {
+    if (!/jpe?g/i.test(file.type)) return file;
+    const n0 = Math.min(file.size, 256 * 1024);
+    const buf = new Uint8Array(await file.slice(0, n0).arrayBuffer());
+    const x = exifAt(new DataView(buf.buffer));
+    if (!x || !x.ifd0[0x8825]) return file;
+    const gps = x.u32(x.ifd0[0x8825] + 8); if (!gps) return file;
+    const n = x.u16(gps), SZ = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1, 9: 4, 10: 8 };
+    if (x.t + gps + 2 + n * 12 + 4 > buf.length) return file;
+    for (let i = 0; i < n; i++) {
+      const e = gps + 2 + i * 12, len = (SZ[x.u16(e + 2)] || 1) * x.u32(e + 4);
+      if (len > 4) { const off = x.t + x.u32(e + 8); if (off + len <= buf.length) buf.fill(0, off, off + len); }
+    }
+    buf.fill(0, x.t + gps, x.t + gps + 2 + n * 12 + 4);
+    return new File([buf, file.slice(n0)], file.name, { type: file.type, lastModified: file.lastModified });
+  } catch (e) { return file; }
+}
+async function uploadOne(job) {
+  job.state = "sending"; job.msg = ""; upRow(job);
+  if (!job.ready) {
+    job.prep = true; upRow(job);
+    job.taken = await photoTaken(job.file);
+    job.file = await stripGps(job.file);
+    job.ready = true; job.prep = false; upRow(job);
+  }
+  const meta = { name: job.name, mime: job.file.type, size: job.file.size, taken: job.taken || "", people: job.people || [], tags: job.tags || [] };
+  if (!job.uploadId && job.file.size <= XV.CHUNK) {
+    const r = await upCall("upstart", Object.assign(meta, { data: await readB64(job.file) }));
+    if (!r.ok) throw r;
+    job.uploadId = r.uploadId;
+    if (r.done) { job.sent = job.file.size; return; }
+    job.sent = r.received || 0;
+  } else if (!job.uploadId) {
+    const r = await upCall("upstart", meta);
+    if (!r.ok) throw r;
+    job.uploadId = r.uploadId; job.sent = 0;
+  } else {
+    const r = await upCall("upstatus", { uploadId: job.uploadId });
+    if (!r.ok) throw r;
+    if (r.done) return;
+    job.sent = r.received;
+  }
+  while (job.sent < job.file.size) {
+    const piece = job.file.slice(job.sent, job.sent + XV.CHUNK);
+    const r = await upCall("upchunk", { uploadId: job.uploadId, offset: job.sent, data: await readB64(piece) });
+    if (!r.ok) throw r;
+    if (r.done) { job.sent = job.file.size; break; }
+    job.sent = r.received; upRow(job);
+  }
+}
+async function runUploads() {
+  if (UP.running) return;
+  UP.running = true;
+  let n = 0;
+  while (UP.queue.length) {
+    const job = UP.queue.shift();
+    try { await uploadOne(job); job.state = "done"; n++; setTimeout(() => job.el && job.el.remove(), 4000); }
+    catch (err) {
+      const e = (err && (err.error || (err.name === "AbortError" ? "timeout" : err.message))) || "";
+      job.state = "error"; job.retry = true;
+      if (e === "invalid_token") { job.msg = "Sign-in expired"; job.retry = false; upRow(job); UP.queue = []; wipeLocal(); showSignIn("Your sign-in expired. Please sign in again."); break; }
+      if (e === "too_big") { job.msg = "Too big"; job.retry = false; }
+      else if (e === "view_only") { job.msg = "View only"; job.retry = false; }
+      else if (e === "upload_expired") { job.msg = "Upload timed out"; job.uploadId = null; }
+      else job.msg = `Upload failed${e ? ` (${e})` : ""}`;
+    }
+    upRow(job);
+  }
+  UP.running = false;
+  if (n) { toast(n === 1 ? "Uploaded" : `${n} uploaded`); openApp(); }
+}
+window.addEventListener("beforeunload", e => { if (UP.running) { e.preventDefault(); e.returnValue = ""; } });
+
+/* ---------- people filter sheet ---------- */
+function peopleSheet() {
+  const cnt = {};
+  (S.items || []).forEach(x => x.people.forEach(n => cnt[n] = (cnt[n] || 0) + 1));
+  const shade = document.createElement("div"); shade.className = "shade";
+  shade.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><h3>Find photos of…</h3><p class="sub">Only people tagged in at least one photo are listed.</p>
+    <input id="psQ" placeholder="Search names" autocomplete="off"><div class="plist" id="psL"></div><div class="btns"><button class="btn ghost" data-close>Close</button></div></div>`;
+  document.body.appendChild(shade);
+  const q = shade.querySelector("#psQ"), L = shade.querySelector("#psL");
+  const draw = () => {
+    const s = q.value.trim().toLowerCase();
+    const list = Object.keys(cnt).filter(n => { const a = alias(n); return !s || a.toLowerCase().includes(s) || n.toLowerCase().includes(s); }).sort((a, b) => alias(a).localeCompare(alias(b)));
+    L.innerHTML = list.map(n => `<button data-n="${esc(n)}"><b>${esc(alias(n))}</b><small>${cnt[n]}</small></button>`).join("") || `<p style="padding:10px;color:var(--muted);font-size:14px;margin:0">No one tagged yet</p>`;
+  };
+  q.addEventListener("input", draw);
+  shade.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (e.target === shade || (b && b.dataset.close)) return shade.remove();
+    if (b && b.dataset.n) { S.filter = { k: "person", v: b.dataset.n }; shade.remove(); render(); }
+  });
+  draw();
+}
+
+/* ---------- wiring ---------- */
+document.addEventListener("click", e => {
+  const b = e.target.closest("button, .tile"); if (!b) return;
+  if (b.dataset.switch !== undefined) return switchAccount();
+  if (b.classList.contains("tile")) return openViewer(+b.dataset.i);
+  if (b.dataset.f) { S.filter = { k: b.dataset.f, v: b.dataset.v }; return render(); }
+  if (b.dataset.people !== undefined) return peopleSheet();
+  if (b.dataset.hd !== undefined) return viewHd(b);
+  if (b.dataset.dl !== undefined) return saveHd(b);
+  if (b.dataset.tagedit !== undefined) return editTags(b);
+  if (b.dataset.del !== undefined) return deleteItem(b);
+  if (b.dataset.upretry !== undefined) { const row = b.closest(".uprow"), job = row && row._job; if (job) { job.state = "waiting"; job.retry = false; upRow(job); UP.queue.push(job); runUploads(); } return; }
+  if (b.dataset.tab) {
+    if (b.dataset.tab !== "moments") return toast(b.dataset.tab === "events" ? "Events are coming soon" : "Memories are coming soon");
+  }
+});
+$("addBtn").onclick = () => $("pick").click();
+$("camBtn").onclick = () => $("cam").click();
+["pick", "cam"].forEach(id => $(id).addEventListener("change", e => { const f = [...e.target.files]; e.target.value = ""; if (f.length) addUploads(f); }));
+$("vClose").onclick = closeViewer;
+$("vPrev").onclick = () => step(-1);
+$("vNext").onclick = () => step(1);
+$("vPlay").onclick = playVideo;
+document.addEventListener("keydown", e => {
+  if ($("viewer").hidden) return;
+  if (e.key === "Escape") closeViewer(); else if (e.key === "ArrowLeft") step(-1); else if (e.key === "ArrowRight") step(1);
+});
+(() => {  // swipe left/right in the viewer
+  let x0 = null, y0 = null;
+  const st = $("vStage");
+  st.addEventListener("touchstart", e => { if (e.touches.length === 1) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } }, { passive: true });
+  st.addEventListener("touchend", e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && $("vVid").hidden) step(dx < 0 ? 1 : -1);
+  });
+})();
+openApp();
+</script>
+</body>
+</html>
