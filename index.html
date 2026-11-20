@@ -120,6 +120,31 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
 .ldots i{font-style:normal;opacity:0;animation:ld1 1.2s infinite steps(1,end)}
 .ldots i:nth-child(2){animation-name:ld2}.ldots i:nth-child(3){animation-name:ld3}
 @keyframes ld1{0%{opacity:0}25%,100%{opacity:1}}@keyframes ld2{0%,25%{opacity:0}50%,100%{opacity:1}}@keyframes ld3{0%,50%{opacity:0}75%,100%{opacity:1}}
+.tile .dot{position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--soft);box-shadow:0 0 0 2px #fff}
+.caught{grid-column:1/-1;text-align:center;font-size:12px;color:var(--muted);padding:10px 0;background:var(--bg)}
+.vsoc{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 2px}
+.rpill{border:0;border-radius:999px;padding:5px 10px;background:rgba(255,255,255,.12);color:#fff;font-size:14px;cursor:pointer;display:inline-flex;gap:5px;align-items:center}
+.rpill.mine{background:rgba(232,161,151,.35);box-shadow:0 0 0 1px #e8a197 inset}
+.rpill b{font-size:12px;font-weight:700}
+.rwho{border:0;background:none;color:rgba(255,255,255,.75);font-size:12px;cursor:pointer;padding:4px 2px;text-align:left}
+.emojis{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:6px 0 10px}
+.emojis button{font-size:26px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 0;cursor:pointer}
+.clist{overflow-y:auto;flex:1;min-height:80px;margin:4px 0 8px}
+.cm{padding:9px 2px;border-bottom:1px solid #f1ece4}
+.cm.rp{margin-left:26px}
+.cm .h{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.cm .h b{color:var(--ink)}
+.cm .t{font-size:15px;white-space:pre-wrap;word-break:break-word;margin-top:2px}
+.cm .t .at{color:var(--rose2);font-weight:600}
+.cm .acts{display:flex;gap:14px;margin-top:3px}
+.cm .acts button{border:0;background:none;color:var(--muted);font-size:12px;font-weight:600;padding:0;cursor:pointer}
+.cbox{display:flex;gap:8px;align-items:flex-end;position:relative}
+.cbox textarea{flex:1;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;resize:none;min-height:44px;max-height:120px;background:#fff;color:var(--ink)}
+.replying{font-size:12px;color:var(--muted);margin-bottom:6px}
+.mlist{position:absolute;left:0;right:60px;bottom:52px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:180px;overflow-y:auto;z-index:2}
+.mlist button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #f1ece4;background:none;padding:9px 12px;font-size:15px;cursor:pointer}
+.resolve .acct{font-size:18px;font-weight:700;margin:6px 0 12px;word-break:break-all}
+.resolve .sug{background:#f6efe9;border-radius:12px;padding:12px;margin:10px 0}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 </style>
 </head>
@@ -174,6 +199,7 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
   <div class="vbot">
     <div class="vcred" id="vCred"></div>
     <div class="vtags" id="vTags"></div>
+    <div class="vsoc" id="vSoc"></div>
     <div class="vact" id="vAct"></div>
   </div>
 </div>
@@ -186,7 +212,7 @@ const XV = {
   CHUNK: 8 * 1024 * 1024
 };
 const LOADING = `<span class="ldots">Loading<i>.</i><i>.</i><i>.</i></span>`;
-const S = { pass: null, me: null, people: [], items: null, filter: { k: "all" }, gis: null, busy: false };
+const S = { pass: null, me: null, people: [], items: null, comments: {}, seen: null, cut: 0, filter: { k: "all" }, gis: null, busy: false };
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const ICON = {
@@ -198,6 +224,9 @@ const ICON = {
   person: `<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg>`,
   lock: `<svg class="i" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>`,
   wifi: `<svg class="i" viewBox="0 0 24 24"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r="1" fill="currentColor"/></svg>`,
+  chat: `<svg class="m" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>`,
+  smile: `<svg class="m" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>`,
+  send: `<svg class="m" viewBox="0 0 24 24"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>`,
   photo: `<svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/></svg>`
 };
 function toast(msg) {
@@ -220,10 +249,10 @@ function loadPass() {
 }
 function savePass(p, exp) { try { p ? localStorage.setItem("xv-pass", JSON.stringify({ pass: p, exp })) : localStorage.removeItem("xv-pass"); } catch (e) {} }
 function wipeLocal() {
-  ["xv-pass", "xv-items"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+  ["xv-pass", "xv-items", "xv-seen"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
   if (window.caches) caches.delete("xv-thumbs").catch(() => {});
   Object.keys(TH).forEach(k => delete TH[k]);
-  S.pass = null; S.me = null; S.items = null;
+  S.pass = null; S.me = null; S.items = null; S.comments = {}; S.seen = null;
 }
 
 /* ---------- status cards ---------- */
@@ -284,7 +313,7 @@ function openApp() {
   if (!S.pass) return showSignIn();
   let quiet = false;
   if (!S.items) {
-    try { const c = JSON.parse(localStorage.getItem("xv-items") || "null"); if (c && c.items) { S.me = c.me; S.people = c.people || []; S.items = c.items; render(); quiet = true; } } catch (e) {}
+    try { const c = JSON.parse(localStorage.getItem("xv-items") || "null"); if (c && c.items) { S.me = c.me; S.people = c.people || []; S.items = c.items; S.comments = c.comments || {}; render(); quiet = true; } } catch (e) {}
   }
   if (!quiet) status(`<div class="ico">${ICON.photo}</div><h3>Opening Moments…</h3>`);
   call("open").then(r => {
@@ -293,17 +322,36 @@ function openApp() {
       if (r.error === "no_access") return notListed(r.email);
       throw new Error(r.error);
     }
-    S.me = r.me; S.people = r.people || []; S.items = r.items || [];
-    try { localStorage.setItem("xv-items", JSON.stringify({ me: S.me, people: S.people, items: S.items })); } catch (e) {}
+    S.me = r.me; S.people = r.people || []; S.items = r.items || []; S.comments = r.comments || {};
+    saveItems();
     render();
   }).catch(() => { if (!quiet) offline(openApp); });
 }
+
+/* ---------- what's new for me (kept on this phone) ---------- */
+function saveItems() { try { localStorage.setItem("xv-items", JSON.stringify({ me: S.me, people: S.people, items: S.items, comments: S.comments })); } catch (e) {} }
+const ms = iso => Date.parse(iso) || 0;
+function seen() {
+  if (!S.seen) {
+    try { S.seen = JSON.parse(localStorage.getItem("xv-seen") || "null"); } catch (e) {}
+    if (!S.seen) { const now = Date.now(); S.seen = { first: now, last: now, per: {} }; saveSeen(); }   // first time on this phone: nothing older is "new"
+    S.cut = S.seen.last;                                  // photos added since your last visit (fixed while you're here)
+  }
+  return S.seen;
+}
+function saveSeen() { try { localStorage.setItem("xv-seen", JSON.stringify(S.seen)); } catch (e) {} }
+function markSeen(id) { seen().per[id] = Date.now(); saveSeen(); }
+function newPhoto(it) { const sn = seen(); return !it.mine && ms(it.at) > S.cut && !sn.per[it.id]; }
+function newAct(it) { const sn = seen(); return !!it.act && ms(it.act.at) > Math.max(sn.first, sn.per[it.id] || 0); }
+const isNew = it => newPhoto(it) || newAct(it);
+document.addEventListener("visibilitychange", () => { if (document.hidden && S.seen) { S.seen.last = Date.now(); saveSeen(); } });
 
 /* ---------- album ---------- */
 const alias = full => { const p = S.people.find(x => x.n === full); return p ? p.a : full; };
 const isPerson = full => S.people.some(x => x.n === full);
 function filtered() {
   const f = S.filter, it = S.items || [];
+  if (f.k === "new") return it.filter(isNew);
   if (f.k === "me") return it.filter(x => S.me && x.people.includes(S.me.name));
   if (f.k === "mine") return it.filter(x => x.mine);
   if (f.k === "tag") return it.filter(x => x.tags.includes(f.v));
@@ -321,6 +369,8 @@ function render() {
   const tops = Object.keys(tagCount).sort((a, b) => tagCount[b] - tagCount[a] || a.localeCompare(b)).slice(0, 12);
   const f = S.filter, on = (k, v) => f.k === k && (v === undefined || f.v === v) ? " on" : "";
   let chips = `<button class="chip${on("all")}" data-f="all">All</button>`;
+  const nNew = (S.items || []).filter(isNew).length;
+  if (nNew || f.k === "new") chips += `<button class="chip${on("new")}" data-f="new">New for you${nNew ? " · " + nNew : ""}</button>`;
   if (me.role === "member") chips += `<button class="chip${on("me")}" data-f="me">Photos of me</button>`;
   if (me.canUpload) chips += `<button class="chip${on("mine")}" data-f="mine">My uploads</button>`;
   chips += f.k === "person" ? `<button class="chip on" data-f="all">${ICON.person}${esc(alias(f.v))} ×</button>` : `<button class="chip" data-people>${ICON.person}People</button>`;
@@ -342,7 +392,10 @@ function render() {
     empty.innerHTML = `<div class="ico">${ICON.photo}</div><p>${msg}</p>`; empty.hidden = false;
   } else {
     empty.hidden = true;
-    $("grid").innerHTML = list.map((it, i) => `<button class="tile" data-i="${i}" data-id="${esc(it.id)}" aria-label="${it.video ? "Video" : "Photo"} by ${esc(it.by)}"><img alt="">${it.video ? `<span class="vb">${ICON.play}</span>` : ""}</button>`).join("");
+    let lastNew = -1;
+    if (f.k === "all") list.forEach((it, i) => { if (newPhoto(it)) lastNew = i; });
+    $("grid").innerHTML = list.map((it, i) => `<button class="tile" data-i="${i}" data-id="${esc(it.id)}" aria-label="${it.video ? "Video" : "Photo"} by ${esc(it.by)}${isNew(it) ? ", new" : ""}"><img alt="">${it.video ? `<span class="vb">${ICON.play}</span>` : ""}${isNew(it) ? `<span class="dot"></span>` : ""}</button>`
+      + (i === lastNew && i < list.length - 1 ? `<div class="caught">You're all caught up</div>` : "")).join("");
     $("grid").querySelectorAll(".tile").forEach(t => {
       const u = TH[t.dataset.id + "|400"];
       if (u) setImg(t.querySelector("img"), u); else observer().observe(t);
@@ -424,6 +477,7 @@ function closeViewer() {
   if ($("viewer").hidden) return;
   $("viewer").hidden = true; document.body.style.overflow = "";
   stopVideo(); dropHd();
+  if (S.items) render();                                  // what you just looked at is no longer "new"
 }
 function dropHd() { if (VW.hd && VW.hd.url) URL.revokeObjectURL(VW.hd.url); VW.hd = null; HDJOB.id = null; }
 function stopVideo() { const v = $("vVid"); v.pause(); v.removeAttribute("src"); v.load(); v.hidden = true; }
@@ -437,11 +491,17 @@ function showItem() {
   const nx = VW.list[VW.i + 1]; if (nx) setTimeout(() => getThumbs([nx.id], 1600), 500);
   $("vPlay").hidden = !it.video; $("vPlayPct").textContent = "";
   $("vCred").textContent = `${it.video ? "Video" : "Photo"} by ${it.by} · ${fmtWhen(it.taken || it.at)}`;
+  markSeen(it.id);
+  viewerBits(it);
+}
+function viewerBits(it) {
   $("vTags").innerHTML = it.people.map(n => `<span class="${isPerson(n) ? "" : "gone"}">${esc(alias(n))}</span>`).join("") + it.tags.map(t => `<span class="h">#${esc(t)}</span>`).join("");
   const mb = it.size ? ` · ${(it.size / 1048576).toFixed(it.size > 10485760 ? 0 : 1)} MB` : "";
   $("vAct").innerHTML = (it.video ? "" : `<button class="vbtn" data-hd>${ICON.hd}<span>View HD</span></button>`)
     + `<button class="vbtn" data-dl>${ICON.dl}<span>Save HD${mb}</span></button>`
+    + (S.me && S.me.canSocial || it.c ? `<button class="vbtn" data-comments aria-label="Comments">${ICON.chat}<span>${it.c ? it.c : "Comment"}</span></button>` : "")
     + (it.canEdit ? `<button class="vbtn" data-tagedit aria-label="Tag people">${ICON.tag}<span>Tag</span></button><button class="vbtn del" data-del aria-label="Delete">${ICON.del}</button>` : "");
+  socRender(it);
   $("vPrev").style.visibility = VW.i > 0 ? "" : "hidden";
   $("vNext").style.visibility = VW.i < VW.list.length - 1 ? "" : "hidden";
 }
@@ -526,6 +586,110 @@ function deleteItem(btn) {
   }).catch(() => { btn.disabled = false; toast("Couldn't delete. Try again"); });
 }
 
+/* ---------- reactions & comments ---------- */
+const QUICK = ["❤️", "😂", "😍", "👏", "🔥", "😮", "🥳", "🙏", "👍", "💯", "😢", "🤩"];
+function whoLine(it) {
+  const names = [];
+  (it.r || []).forEach(x => x[3].forEach(n => { if (!names.includes(n)) names.push(n); }));
+  if (!names.length) return "";
+  return names.length <= 2 ? names.join(" and ") : `${names.slice(0, 2).join(", ")} and ${names.length - 2} other${names.length > 3 ? "s" : ""}`;
+}
+function socRender(it) {
+  const can = S.me && S.me.canSocial;
+  const pills = (it.r || []).map(x => `<button class="rpill${x[2] ? " mine" : ""}" data-react="${esc(x[0])}"${can ? "" : " disabled"}>${esc(x[0])}<b>${x[1]}</b></button>`).join("");
+  $("vSoc").innerHTML = pills + (can ? `<button class="rpill" data-reactadd aria-label="Add a reaction">${ICON.smile}</button>` : "")
+    + ((it.r || []).length ? `<button class="rwho" data-rwho>${esc(whoLine(it))}</button>` : "");
+}
+function applyState(it, r) {
+  it.r = r.r; it.c = r.c; S.comments[it.id] = r.comments || [];
+  saveItems();
+  if (!$("viewer").hidden && VW.list[VW.i] === it) viewerBits(it);
+}
+function react(emoji) {
+  const it = VW.list[VW.i];
+  return call("react", { id: it.id, emoji }).then(r => { if (!r.ok) throw new Error(r.error); applyState(it, r); })
+    .catch(e => toast(String(e.message) === "bad_emoji" ? "Please pick one emoji" : "Couldn't react. Try again"));
+}
+function sheet(html) {
+  const shade = document.createElement("div"); shade.className = "shade";
+  shade.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${html}</div>`;
+  document.body.appendChild(shade);
+  shade.addEventListener("click", e => { if (e.target === shade || e.target.closest("[data-close]")) shade.remove(); });
+  return shade;
+}
+function emojiSheet() {
+  const sh = sheet(`<h3>React</h3><div class="emojis">${QUICK.map(e => `<button data-e="${e}">${e}</button>`).join("")}</div>
+    <label>Or type any emoji</label><div style="display:flex;gap:8px"><input id="emIn" maxlength="16" placeholder="Tap here, then pick from your emoji keyboard" autocomplete="off"><button class="btn rose" id="emGo">Add</button></div>
+    <div class="btns"><button class="btn ghost" data-close>Close</button></div>`);
+  sh.addEventListener("click", e => { const b = e.target.closest("[data-e]"); if (b) { sh.remove(); react(b.dataset.e); } });
+  sh.querySelector("#emGo").onclick = () => { const v = sh.querySelector("#emIn").value.trim(); if (!v) return; sh.remove(); react(v); };
+}
+function whoSheet(it) {
+  sheet(`<h3>Reactions</h3><div class="clist">${(it.r || []).map(x => `<div class="cm"><div class="t">${esc(x[0])} <b>${x[1]}</b></div><div class="h">${x[3].map(esc).join(", ")}</div></div>`).join("")}</div>
+    <div class="btns"><button class="btn ghost" data-close>Close</button></div>`);
+}
+const fmtShort = iso => new Date(iso).toLocaleString("en-SG", { timeZone: "Asia/Singapore", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+function withMentions(text) {
+  let h = esc(text);
+  const names = S.people.map(p => p.a).sort((a, b) => b.length - a.length);
+  names.forEach(n => {
+    const k = esc("@" + n), re = new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![a-z0-9])", "gi");
+    h = h.replace(re, m => `<span class="at">${m}</span>`);
+  });
+  return h;
+}
+function commentsSheet(it) {
+  markSeen(it.id);
+  const can = S.me && S.me.canSocial;
+  const sh = sheet(`<h3>Comments</h3><div class="clist" id="cL"></div>
+    ${can ? `<div class="replying" id="cR" hidden></div><div class="cbox"><div class="mlist" id="cM" hidden></div><textarea id="cT" rows="1" maxlength="300" placeholder="Add a comment… type @ to mention"></textarea><button class="btn rose" id="cS" aria-label="Send">${ICON.send}</button></div>`
+      : `<p class="sub">You can read comments. Commenting opens once you join EXO.</p>`}
+    <div class="btns"><button class="btn ghost" data-close>Close</button></div>`);
+  let parent = "";
+  const L = sh.querySelector("#cL");
+  const draw = () => {
+    const list = S.comments[it.id] || [];
+    const row = (c, rp) => `<div class="cm${rp ? " rp" : ""}"><div class="h"><b>${esc(c[1])}</b><span>${fmtShort(c[2])}</span></div><div class="t">${withMentions(c[3])}</div>
+      <div class="acts">${can ? `<button data-reply="${esc(c[6] || c[0])}" data-name="${esc(c[1])}">Reply</button>` : ""}${c[5] ? `<button data-cdel="${esc(c[0])}">Delete</button>` : ""}</div></div>`;
+    L.innerHTML = list.filter(c => !c[6]).map(c => row(c, false) + list.filter(x => x[6] === c[0]).map(x => row(x, true)).join("")).join("")
+      || `<p class="sub" style="padding:8px 2px">No comments yet${can ? ". Be the first!" : "."}</p>`;
+    L.scrollTop = L.scrollHeight;
+  };
+  draw();
+  sh.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.reply) {
+      parent = b.dataset.reply;
+      const R = sh.querySelector("#cR"); R.hidden = false; R.innerHTML = `Replying to ${esc(b.dataset.name)} · <button class="linkbtn" data-unreply>Cancel</button>`;
+      const T = sh.querySelector("#cT"); if (b.dataset.name !== (S.me && S.me.alias) && !/^EXO Team|Core team$/.test(b.dataset.name)) T.value = "@" + b.dataset.name + " "; T.focus();
+    } else if (b.dataset.unreply !== undefined) { parent = ""; sh.querySelector("#cR").hidden = true; }
+    else if (b.dataset.cdel) {
+      if (!confirm("Delete this comment?")) return;
+      call("uncomment", { cid: b.dataset.cdel }).then(r => { if (!r.ok) throw 0; applyState(it, r); draw(); }).catch(() => toast("Couldn't delete. Try again"));
+    } else if (b.dataset.m) {
+      const T = sh.querySelector("#cT"), pos = T.selectionStart, before = T.value.slice(0, pos).replace(/@[^@\n]{0,20}$/, "@" + b.dataset.m + " ");
+      T.value = before + T.value.slice(pos); sh.querySelector("#cM").hidden = true; T.focus(); T.setSelectionRange(before.length, before.length);
+    }
+  });
+  if (!can) return;
+  const T = sh.querySelector("#cT"), M = sh.querySelector("#cM"), SND = sh.querySelector("#cS");
+  T.addEventListener("input", () => {
+    T.style.height = "auto"; T.style.height = Math.min(120, T.scrollHeight) + "px";
+    const m = /@([^@\n]{0,20})$/.exec(T.value.slice(0, T.selectionStart));
+    const q = m ? m[1].toLowerCase() : null;
+    const hits = q === null ? [] : S.people.filter(p => p.a.toLowerCase().startsWith(q) || p.n.toLowerCase().includes(q)).slice(0, 8);
+    M.hidden = !hits.length; M.innerHTML = hits.map(p => `<button data-m="${esc(p.a)}">${esc(p.a)}</button>`).join("");
+  });
+  SND.onclick = () => {
+    const text = T.value.trim(); if (!text) return;
+    SND.disabled = true;
+    call("comment", { id: it.id, text, parent }).then(r => {
+      if (!r.ok) throw new Error(r.error);
+      applyState(it, r); T.value = ""; T.style.height = ""; parent = ""; sh.querySelector("#cR").hidden = true; draw();
+    }).catch(e => toast(String(e.message) === "reply_gone" ? "That comment was deleted" : "Couldn't send. Try again")).finally(() => { SND.disabled = false; });
+  };
+}
+
 /* ---------- tag sheet (upload batch or one photo) ---------- */
 function tagSheet({ title, sub, people, tags, okLabel, skipLabel }) {
   return new Promise(done => {
@@ -575,7 +739,7 @@ async function editTags(btn) {
   call("tag", { id: it.id, people: r.people, tags: r.tags }).then(x => {
     if (!x.ok) throw new Error(x.error);
     it.people = x.people; it.tags = x.tags;
-    try { localStorage.setItem("xv-items", JSON.stringify({ me: S.me, people: S.people, items: S.items })); } catch (e) {}
+    saveItems();
     showItem(); render(); toast("Saved");
   }).catch(() => { btn.disabled = false; toast("Couldn't save. Try again"); });
 }
@@ -833,6 +997,10 @@ document.addEventListener("click", e => {
   if (b.dataset.hd !== undefined) return viewHd(b);
   if (b.dataset.dl !== undefined) return saveHd(b);
   if (b.dataset.tagedit !== undefined) return editTags(b);
+  if (b.dataset.react && !b.closest(".sheet")) return react(b.dataset.react);
+  if (b.dataset.reactadd !== undefined) return emojiSheet();
+  if (b.dataset.rwho !== undefined) return whoSheet(VW.list[VW.i]);
+  if (b.dataset.comments !== undefined) return commentsSheet(VW.list[VW.i]);
   if (b.dataset.del !== undefined) return deleteItem(b);
   if (b.dataset.upretry !== undefined) { const row = b.closest(".uprow"), job = row && row._job; if (job) { job.state = "waiting"; job.retry = false; upRow(job); UP.queue.push(job); runUploads(); } return; }
   if (b.dataset.tab) {
@@ -860,7 +1028,51 @@ document.addEventListener("keydown", e => {
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && $("vVid").hidden) step(dx < 0 ? 1 : -1);
   });
 })();
-openApp();
+/* ---------- one-tap page from the new-account alert email ---------- */
+function resolvePage(t) {
+  document.querySelector("nav.tabs").hidden = true; document.body.style.paddingBottom = "20px";
+  status(`<div class="ico">${ICON.person}</div><h3>Checking the link…</h3>`);
+  api({ action: "resolveinfo", t }).then(r => {
+    if (!r.ok) return status(`<div class="ico">${ICON.lock}</div><h3>This link has expired</h3><p>If the account still isn't linked, a fresh email comes with the next daily check.</p>`);
+    if (r.done) return doneCard(r.account, r.done);
+    let pick = r.suggest ? r.suggest.n : "";
+    const people = r.people || [];
+    const aliasOf = n => (people.find(p => p.n === n) || {}).a || n;
+    const draw = () => {
+      status(`<div class="resolve" style="text-align:left">${r.test ? `<p class="vonly" style="margin:0 0 10px">Test link: nothing will be saved.</p>` : ""}
+        <p style="margin:0;color:var(--muted);font-size:14px">New account on the EXO Folder</p><div class="acct">${esc(r.account)}</div>
+        ${pick ? `<div class="sug">Link to <b>${esc(aliasOf(pick))}</b><br><small style="color:var(--muted)">${esc(pick)}${r.suggest && r.suggest.n === pick ? " · suggested from the email name" : ""}</small></div>
+          <div class="btns" style="justify-content:flex-start"><button class="btn rose" id="rsOk">Confirm</button></div>` : `<p>No obvious match. Pick the FC below, or keep it as a Candidate.</p>`}
+        <label style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;display:block;margin:16px 0 6px">${pick ? "Not right? Pick another FC" : "Pick the FC"}</label>
+        <input id="rsQ" placeholder="Search names" autocomplete="off" style="width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:12px">
+        <div class="plist" id="rsL" style="max-height:220px"></div>
+        <div class="btns" style="justify-content:flex-start"><button class="btn ghost" id="rsCand">Keep as Candidate (view only)</button></div></div>`);
+      const q = $("rsQ"), L = $("rsL");
+      const list = () => { const v = q.value.trim().toLowerCase();
+        L.innerHTML = people.filter(p => !v || p.a.toLowerCase().includes(v) || p.n.toLowerCase().includes(v)).slice(0, 40)
+          .map(p => `<button data-pn="${esc(p.n)}"><b>${esc(p.a)}</b><small>${p.a === p.n ? "" : esc(p.n)}</small></button>`).join(""); };
+      q.oninput = list; list();
+      L.onclick = e => { const b = e.target.closest("[data-pn]"); if (b) { pick = b.dataset.pn; r.suggest = r.suggest && r.suggest.n === pick ? r.suggest : null; draw(); window.scrollTo(0, 0); } };
+      if ($("rsOk")) $("rsOk").onclick = () => send({ name: pick });
+      $("rsCand").onclick = () => send({ candidate: true });
+    };
+    const send = body => {
+      status(`<div class="ico">${ICON.person}</div><h3>Saving…</h3>`);
+      api(Object.assign({ action: "resolve", t }, body)).then(x => {
+        if (!x.ok) throw new Error(x.error);
+        doneCard(r.account, x.done, x.test, x.already);
+      }).catch(() => status(`<h3>Couldn't save</h3><p>Check your connection and open the link again.</p>`));
+    };
+    draw();
+  }).catch(() => offline(() => resolvePage(t)));
+}
+function doneCard(acct, d, test, already) {
+  const who = d.as === "Candidate" ? "kept as a <b>Candidate</b> (view only)" : `linked to <b>${esc(d.alias || d.as)}</b>`;
+  status(`<div class="ico">${ICON.person}</div><h3>${test ? "Test: nothing saved" : already ? "Already done" : "Done"}</h3><p>${esc(acct)} is ${who}.</p>
+    ${d.as !== "Candidate" && !test ? "<p>Saved to Gmail Links, so CEDLI check-in knows them too. Xverse updates right away.</p>" : ""}`);
+}
+const RESOLVE = new URLSearchParams(location.search).get("resolve");
+if (RESOLVE) resolvePage(RESOLVE); else openApp();
 </script>
 </body>
 </html>
