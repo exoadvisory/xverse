@@ -243,6 +243,9 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .tile.big{width:100%;aspect-ratio:4/3;border-radius:14px;display:block}.tile.big img{object-fit:cover}
 .mrow{display:flex;justify-content:space-between;gap:10px;width:100%;border:0;border-bottom:1px solid #f1ece4;background:none;padding:10px 0;text-align:left;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}.mrow:last-child{border-bottom:0}.mrow small{color:var(--muted);white-space:nowrap}
 .bdg.now{background:#b8766d;color:#fff}
+.venue{display:flex;align-items:flex-start;gap:8px;margin:10px 0 2px;font-size:14px;color:var(--ink)}.venue svg{flex:none;width:18px;height:18px;margin-top:1px;color:var(--rose2)}.venue span{flex:1;line-height:1.35}
+.venue .dir{flex:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:700;color:var(--rose2);text-decoration:none;background:#fff}
+.mapchk{display:block;margin:6px 0 0 auto;font-size:13px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 </style>
 </head>
@@ -768,6 +771,8 @@ function evEndMs(e) {
   const p = sgParts(e.start); return Date.parse(`${p.y}-${pad2(p.m + 1)}-${pad2(p.d)}T23:59:59+08:00`);
 }
 const evNow = e => e.kind !== "order" && e.status !== "cancelled" && ms(e.start) <= Date.now() && Date.now() < evEndMs(e);
+// Google Maps search for a venue (opens the Maps app on phones that have it). No key or cost.
+const mapsUrl = v => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(enPlace(v));
 function whenText(e) {
   const s = sgParts(e.start), en = sgParts(e.end || e.start), wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][s.wd];
   const day = `${wd} ${s.d} ${MON[s.m]} ${s.y}`;
@@ -882,9 +887,10 @@ function openEvent(id, opt) {
   const rb = e.act === "rsvp" || order ? respondBlock(e) : null;
   const P = $("evPage");
   const page = () => `${S.preview ? `<div class="prevbar">Preview: this is what FCs see · <button class="linkbtn" data-unprev style="color:#e8a197">Back</button></div>` : ""}<div class="evcover"><button class="evback" data-evclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
-    ${badge ? `<span class="bdg">${esc(badge)}</span>` : ""}<h2>${esc(e.title)}</h2><p>${order ? "Team order" + (e.max ? " · max " + e.max + " per person" : "") : esc(whenText(e)) + (e.venue ? " · " + esc(enPlace(e.venue)) : "")}</p></div>
+    ${badge ? `<span class="bdg">${esc(badge)}</span>` : ""}<h2>${esc(e.title)}</h2><p>${order ? "Team order" + (e.max ? " · max " + e.max + " per person" : "") : esc(whenText(e))}</p></div>
     <div class="evbody">
       ${e.tag || e.note || !order ? `<div class="card" style="text-align:left">${e.tag ? `<span class="evtag">#${esc(e.tag)}</span>` : ""}
+        ${!order && e.venue ? `<div class="venue"><svg class="i" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>${esc(enPlace(e.venue))}</span><a class="dir" href="${mapsUrl(e.venue)}" target="_blank" rel="noopener">Directions</a></div>` : ""}
         ${e.note ? `<p style="white-space:pre-wrap;color:var(--ink);font-size:14px;margin:10px 0 0">${esc(e.note)}</p>` : ""}
         ${S.me && S.me.ref && !S.preview && e.status !== "cancelled" && !e.closed && e.guestOpen ? `<button class="calbtn" data-share><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Share link with a guest</button>` : ""}
         ${order ? "" : `<button class="calbtn" data-evics><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>Add to my calendar</button>`}</div>` : ""}
@@ -973,7 +979,7 @@ function openBuilder(e, kindNew) {
           <div class="swr"><span>All day</span><button class="sw${f.allDay ? " on" : ""}" data-bsw="allDay"></button></div>
           ${f.allDay ? "" : `<div class="two"><div><label>Starts</label>${pick("bS", "time", t1)}</div><div><label>Ends</label>${pick("bE", "time", t2)}</div></div>`}
           ${f.recurring ? "" : `<label>End date</label>${pick("bD2", "date", date2)}`}
-          <label>Venue</label><input id="bV" value="${esc(enPlace(f.venue))}" maxlength="200">`}
+          <label>Venue</label><input id="bV" value="${esc(enPlace(f.venue))}" maxlength="200"><button class="linkbtn mapchk" data-bmap>Check on map ›</button>`}
           <label>Note</label><textarea id="bN" maxlength="1000">${esc(f.note)}</textarea></div>
         <div class="card" style="text-align:left"><b>2 · ${order ? "Who can order" : "Who can see it"}</b><div class="seg2" style="margin-top:8px">
             ${(order ? ["groups", "invitees"] : ["hidden", "groups", "invitees"]).map(k => `<button data-bsee="${k}" class="${f.see === k ? "on" : ""}">${{ hidden: "Hidden", groups: "Groups", invitees: "Invitees" }[k]}</button>`).join("")}</div>
@@ -1048,6 +1054,7 @@ function openBuilder(e, kindNew) {
     }
     if (b.dataset.bgrp) { grab(); const g = b.dataset.bgrp; f.groups = f.groups.includes(g) ? f.groups.filter(x => x !== g) : f.groups.concat(g); return draw(); }
     if (b.dataset.binv !== undefined) { grab(); return invitePicker(f, draw); }
+    if (b.dataset.bmap !== undefined) { const v = $("bV").value.trim(); if (!v) return toast("Type the venue first"); return window.open(mapsUrl(v), "_blank", "noopener"); }
     if (b.dataset.bcopy !== undefined) { grab(); return copyPicker(order, date, src => {
       // copy the set-up, not the dates: title, venue, note, who, what people do, questions, payment, album
       Object.assign(f, { title: src.title, venue: src.venue || "", note: src.note || "", see: src.see === "hidden" ? "groups" : src.see, groups: (src.groups || []).slice(), people: (src.people || []).slice(),
