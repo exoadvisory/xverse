@@ -1644,7 +1644,12 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events,
     };
     const addTags = () => {
       H.value.split(/[\s,]+/).map(t => t.toLowerCase().replace(/^#+/, "").replace(/[^a-z0-9_]/g, "").slice(0, 30)).filter(Boolean)
-        .forEach(t => { if (!hs.includes(t) && hs.length < 10) hs.push(t); });
+        .forEach(t => {
+          // typing an event's tag (e.g. #EXOYearEndParty2026Dec) puts the photo in that event's album
+          const sel2 = shade.querySelector("#tsE"), ev = (events || []).find(e => e.tag && e.tag.toLowerCase().slice(0, 30) === t);
+          if (ev && sel2) { sel2.value = ev.id; toast(`Added to ${ev.title}`); return; }
+          if (!hs.includes(t) && hs.length < 10) hs.push(t);
+        });
       H.value = ""; draw();
     };
     H.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " " || e.key === ",") { e.preventDefault(); addTags(); } });
