@@ -215,7 +215,6 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .evc .dt.o{background:linear-gradient(160deg,#7a5c66,#c4877f)}
 .evpast .evc{opacity:.55;filter:grayscale(.35)}
 .or{display:flex;align-items:center;gap:10px;margin:18px 0 10px;color:var(--muted);font-size:13px}.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
-#gbtn2{display:flex;justify-content:center;min-height:44px}
 .matte{position:relative;border-radius:14px;overflow:hidden;min-height:420px}.matte .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.matte .grid div{aspect-ratio:1;border-radius:6px;background:#d9cfc2;filter:blur(4px)}.matte .grid div:nth-child(3n+1){background:#cbb9a8}.matte .grid div:nth-child(4n){background:#b9a6a0}
 .matte .over{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:rgba(246,243,238,.55)}
 .matte .over h3{margin:6px 0 4px}.matte .over p{color:var(--muted);font-size:14px;margin:0 0 14px}
@@ -338,13 +337,12 @@ function wipeLocal() {
 function status(html) { $("status").innerHTML = html ? `<div class="card">${html}</div>` : ""; $("album").hidden = !!html; }
 function showSignIn(msg) {
   const forEvent = DEEP.ev ? `<p style="color:var(--ink);font-weight:600">Sign in to see the event and register.</p>` : "";
-  status(`<div class="ico">${ICON.lock}</div><h3>Sign in to Xverse</h3>${forEvent}<p>${msg || "EXOians: use the Google account that has the EXO Folder."}</p><div id="gbtn"><p>Loading Google sign-in…</p></div>
-    <div class="or"><span>Not an EXOian yet?</span></div><div id="gbtn2"></div><p style="margin-top:6px">Guests can sign up for events that are open to guests.</p>`);
+  status(`<div class="ico">${ICON.lock}</div><h3>Sign in to Xverse</h3>${forEvent}<div id="gbtn"><p>Loading Google sign-in…</p></div>
+    <p style="margin-top:14px">${msg || "EXOians: use the Google account that has the EXO Folder."}</p><p>Guests: any Google account works. You can sign up for events that are open to guests.</p>`);
   loadGis().then(() => {
-    const el = $("gbtn"), el2 = $("gbtn2"); if (!el) return;
+    const el = $("gbtn"); if (!el) return;
     el.innerHTML = "";
     google.accounts.id.renderButton(el, { theme: "filled_black", size: "large", shape: "pill", text: "signin_with", width: 240 });
-    if (el2) google.accounts.id.renderButton(el2, { theme: "outline", size: "large", shape: "pill", text: "continue_with", width: 240 });
   }).catch(() => { const el = $("gbtn"); if (el) el.innerHTML = "<p>Couldn't load Google sign-in. Check your connection and refresh.</p>"; });
 }
 // name from the Google sign-in (guests' name box starts with it)
@@ -371,7 +369,7 @@ function onCredential(cred) {
   api({ action: "signin", idToken: cred }).then(r => {
     if (!r.ok) return showSignIn("That sign-in didn't work. Please try again.");
     if (r.access !== "ok" && r.access !== "guest") return notListed(r.email);
-    if (r.access === "guest") { const n = nameFromToken(cred); if (n) try { localStorage.setItem("xv-gname", n); } catch (e) {} }
+    if (r.access === "guest") { const n = nameFromToken(cred); try { if (n) localStorage.setItem("xv-gname", n); localStorage.removeItem("xv-gnote"); } catch (e) {} }
     savePass(r.pass, r.exp); S.pass = r.pass;
     openApp();
   }).catch(() => offline(() => onCredential(cred)));
@@ -421,6 +419,11 @@ const DEEP = (() => { const q = new URLSearchParams(location.search); const d = 
 let deepDone = false;
 function afterOpen() {
   const guest = S.me && S.me.role === "guest";
+  if (guest) { let shown = ""; try { shown = localStorage.getItem("xv-gnote"); } catch (e) {}
+    if (shown !== S.me.email) { try { localStorage.setItem("xv-gnote", S.me.email); } catch (e) {}
+      const sh = sheet(`<h3>You're signed in as a guest</h3><p class="sub">${esc(S.me.email)}</p><p class="sub">EXOian? Switch to the account that has the EXO Folder.</p>
+        <div class="btns"><button class="btn ghost" data-switch>Switch account</button><button class="btn rose" data-close>Continue as guest</button></div>`);
+      sh.addEventListener("click", ev => { if (ev.target.closest("[data-switch]")) sh.remove(); }); } }
   if (guest && S.tab !== "events") showTab("events");
   if (DEEP.ev && !deepDone) {
     deepDone = true;
