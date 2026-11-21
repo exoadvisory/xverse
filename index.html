@@ -241,6 +241,7 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .mstats{display:flex;gap:8px;margin-top:12px}.mstats div{flex:1;background:rgba(255,255,255,.14);border-radius:12px;padding:8px;text-align:center}.mstats b{display:block;font-size:20px}.mstats span{font-size:11px;opacity:.9}
 .tile.big{width:100%;aspect-ratio:4/3;border-radius:14px;display:block}.tile.big img{object-fit:cover}
 .mrow{display:flex;justify-content:space-between;gap:10px;width:100%;border:0;border-bottom:1px solid #f1ece4;background:none;padding:10px 0;text-align:left;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}.mrow:last-child{border-bottom:0}.mrow small{color:var(--muted);white-space:nowrap}
+.bdg.now{background:#b8766d;color:#fff}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 </style>
 </head>
@@ -756,10 +757,24 @@ const MONTHS_FULL = ["January", "February", "March", "April", "May", "June", "Ju
 const sgParts = iso => { const d = new Date(new Date(iso).getTime() + 8 * 3600e3); return { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(), hh: d.getUTCHours(), mm: d.getUTCMinutes(), wd: d.getUTCDay() }; };
 const pad2 = n => String(n).padStart(2, "0");
 const fmtTime = p => `${p.hh % 12 || 12}${p.mm ? ":" + pad2(p.mm) : ""}${p.hh < 12 ? "am" : "pm"}`;
+// all-day events: the calendar stores the end as the start of the day after; this is the last day itself
+const allDayLast = e => ms(e.end) > ms(e.start) ? new Date(ms(e.end) - 60000).toISOString() : e.start;
+// when an event is over: timed = its end time (no end set → end of that day); all-day = end of its last day
+function evEndMs(e) {
+  const st = ms(e.start), en = ms(e.end || e.start);
+  if (e.allDay) return en > st ? en : st + 864e5;
+  if (en > st) return en;
+  const p = sgParts(e.start); return Date.parse(`${p.y}-${pad2(p.m + 1)}-${pad2(p.d)}T23:59:59+08:00`);
+}
+const evNow = e => e.kind !== "order" && e.status !== "cancelled" && ms(e.start) <= Date.now() && Date.now() < evEndMs(e);
 function whenText(e) {
   const s = sgParts(e.start), en = sgParts(e.end || e.start), wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][s.wd];
   const day = `${wd} ${s.d} ${MON[s.m]} ${s.y}`;
-  if (e.allDay) return day;
+  if (e.allDay) {
+    const l = sgParts(allDayLast(e));
+    if (l.y === s.y && l.m === s.m && l.d === s.d) return day;
+    return `${wd} ${s.d} ${MON[s.m]}${l.y !== s.y ? " " + s.y : ""} – ${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][l.wd]} ${l.d} ${MON[l.m]} ${l.y}`;
+  }
   const sameDay = en.y === s.y && en.m === s.m && en.d === s.d;
   if (!sameDay) return `${day} · ${fmtTime(s)} – ${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][en.wd]} ${en.d} ${MON[en.m]}, ${fmtTime(en)}`;
   return `${day} · ${fmtTime(s)}${(en.hh !== s.hh || en.mm !== s.mm) ? "–" + fmtTime(en) : ""}`;
@@ -803,7 +818,7 @@ const EN_PLACES = [[/新加坡/g, "Singapore"], [/马来西亚|馬來西亞/g, "
 const enPlace = s => EN_PLACES.reduce((t, [re, w]) => t.replace(re, w), String(s || ""));
 function evCard(e) {
   const p = sgParts(e.kind === "order" ? e.deadline : e.start), core = S.me && S.me.core, m = e.mine;
-  const badges = (e.invited ? `<span class="bdg">You're invited</span>` : "")
+  const badges = (evNow(e) ? `<span class="bdg now">Happening now</span>` : "") + (e.invited ? `<span class="bdg">You're invited</span>` : "")
     + (m && m.status === "going" ? `<span class="bdg">Going ✓</span>` : m && m.status === "not" ? `<span class="bdg g">Not going</span>` : m && m.status === "ordered" ? `<span class="bdg">Ordered ✓</span>` : "")
     + (!m && e.act === "rsvp" && !e.closed ? `<span class="bdg">RSVP by ${(q => q.d + " " + MON[q.m])(sgParts(e.deadline))}</span>` : "")
     + (e.closed && e.act !== "fyi" ? `<span class="bdg g">Closed</span>` : "")
@@ -822,9 +837,9 @@ function renderEvents() {
   const shown = e => !core || e.see !== "hidden";
   const orders = live.filter(e => e.kind === "order" && shown(e) && (!e.closed || ms(e.deadline) > now - 7 * 864e5));
   const evs = live.filter(e => e.kind !== "order");
-  const up = evs.filter(e => ms(e.end || e.start) >= now - 12 * 3600e3 && shown(e));
-  const past = evs.filter(e => ms(e.end || e.start) < now - 12 * 3600e3 && shown(e)).reverse();
-  const hidden = core ? live.filter(e => e.see === "hidden" && ms(e.end || e.start || e.deadline) >= now - 12 * 3600e3) : [];
+  const up = evs.filter(e => evEndMs(e) > now && shown(e));                 // leaves Upcoming at its end time
+  const past = evs.filter(e => evEndMs(e) <= now && shown(e)).reverse();
+  const hidden = core ? live.filter(e => e.see === "hidden" && evEndMs(e) > now) : [];
   const cancelled = core ? S.events.filter(e => e.status === "cancelled") : [];
   // like a calendar: past events above (greyed, oldest first), and the page opens at the next upcoming one
   let h = past.length ? `<div class="evsec">Past</div><div class="evpast">${past.slice().reverse().map(evCard).join("")}</div>` : "";
@@ -840,7 +855,7 @@ function icsFor(e) {
   const f = iso => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const day = iso => { const p = sgParts(iso); return `${p.y}${pad2(p.m + 1)}${pad2(p.d)}`; };
   const escI = t => String(t || "").replace(/[\\,;]/g, m => "\\" + m).replace(/\n/g, "\\n");
-  const when = e.allDay ? `DTSTART;VALUE=DATE:${day(e.start)}\r\nDTEND;VALUE=DATE:${day(new Date(ms(e.start) + 864e5).toISOString())}` : `DTSTART:${f(e.start)}\r\nDTEND:${f(e.end || e.start)}`;
+  const when = e.allDay ? `DTSTART;VALUE=DATE:${day(e.start)}\r\nDTEND;VALUE=DATE:${day(new Date(ms(allDayLast(e)) + 864e5).toISOString())}` : `DTSTART:${f(e.start)}\r\nDTEND:${f(e.end || e.start)}`;
   return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Xverse//EXO//EN", "BEGIN:VEVENT", `UID:${e.id}@xverse`, `DTSTAMP:${f(new Date().toISOString())}`, when,
     `SUMMARY:${escI(e.title)}`, e.venue ? `LOCATION:${escI(enPlace(e.venue))}` : "", e.note ? `DESCRIPTION:${escI(e.note)}` : "", "END:VEVENT", "END:VCALENDAR"].filter(Boolean).join("\r\n");
 }
@@ -936,7 +951,7 @@ function openBuilder(e, kindNew) {
   const f = e ? Object.assign({}, e, { groups: (e.groups || []).slice(), people: (e.people || []).slice(), form: JSON.parse(JSON.stringify(e.form || [])), pay: e.pay ? Object.assign({}, e.pay) : { on: false, amount: 0, details: "" } })
     : { title: "", start: wk, end: "", allDay: false, venue: "", note: "", see: "groups", groups: ["core", "xcademy"], people: [], album: !order, tag: "", cal: !order,
         act: order ? "order" : "fyi", kind: order ? "order" : "event", form: order ? [{ id: "q0", type: "items", label: "Items", required: false, options: [] }] : [], deadline: "", pay: { on: false, amount: 0, details: "" }, max: 0, finexisClose: "" };
-  let date = sgDateStr(f.start), date2 = f.end && !isNew ? sgDateStr(f.end) : sgDateStr(f.start), t1 = f.allDay || isNew ? "10:00" : sgTimeStr(f.start), t2 = f.allDay || !f.end || isNew ? "" : sgTimeStr(f.end);
+  let date = sgDateStr(f.start), date2 = f.end && !isNew ? sgDateStr(f.allDay ? allDayLast(f) : f.end) : sgDateStr(f.start), t1 = f.allDay || isNew ? "10:00" : sgTimeStr(f.start), t2 = f.allDay || !f.end || isNew ? "" : sgTimeStr(f.end);
   let dlD = f.deadline ? sgDateStr(f.deadline) : "", dlT = f.deadline ? sgTimeStr(f.deadline) : "23:59", finD = f.finexisClose ? sgDateStr(f.finexisClose) : "";
   let tabName = f.tab ? f.tab.name : "";
   let tagTouched = !!f.tag, calOn = isNew ? !order : !!f.cal;
@@ -955,8 +970,8 @@ function openBuilder(e, kindNew) {
           <label>Title</label><input id="bT" value="${esc(f.title)}" maxlength="120" placeholder="${order ? "e.g. Raya Green Packets 2027" : "e.g. Nov Anniversary Lunch"}">
           ${order ? "" : `<label>Date</label>${f.recurring ? `<div class="pick"><span>${esc(dateLbl(date))}</span></div>` : pick("bD", "date", date)}
           <div class="swr"><span>All day</span><button class="sw${f.allDay ? " on" : ""}" data-bsw="allDay"></button></div>
-          ${f.allDay ? "" : `<div class="two"><div><label>Starts</label>${pick("bS", "time", t1)}</div><div><label>Ends</label>${pick("bE", "time", t2)}</div></div>
-          ${f.recurring ? "" : `<label>End date</label>${pick("bD2", "date", date2)}`}`}
+          ${f.allDay ? "" : `<div class="two"><div><label>Starts</label>${pick("bS", "time", t1)}</div><div><label>Ends</label>${pick("bE", "time", t2)}</div></div>`}
+          ${f.recurring ? "" : `<label>End date</label>${pick("bD2", "date", date2)}`}
           <label>Venue</label><input id="bV" value="${esc(enPlace(f.venue))}" maxlength="200">`}
           <label>Note</label><textarea id="bN" maxlength="1000">${esc(f.note)}</textarea></div>
         <div class="card" style="text-align:left"><b>2 · ${order ? "Who can order" : "Who can see it"}</b><div class="seg2" style="margin-top:8px">
@@ -1059,7 +1074,8 @@ function openBuilder(e, kindNew) {
       if (order && f.pay.on && !finD) return draw("Please set when the finexis order closes, so screenshots can be cleared after.");
       const deadline = rsvp ? `${dlD}T${dlT || "23:59"}:00+08:00` : "";
       const start = order ? deadline : f.allDay ? `${date}T00:00:00+08:00` : `${date}T${t1}:00+08:00`;
-      const end = order ? deadline : f.allDay ? start : `${f.recurring ? date : date2 || date}T${t2 || t1}:00+08:00`;
+      const nextDay = ymd => { const d = new Date(ymd + "T12:00:00+08:00"); d.setTime(d.getTime() + 864e5); return sgDateStr(d.toISOString()); };
+      const end = order ? deadline : f.allDay ? (date2 && date2 > date ? `${nextDay(date2)}T00:00:00+08:00` : start) : `${f.recurring ? date : date2 || date}T${t2 || t1}:00+08:00`;
       if (!order && !f.allDay && t2 && new Date(end) <= new Date(start)) return draw("The end is before the start. For an overnight event, change the End date.");
       b.disabled = true; b.innerHTML = LOADING;
       call("eventsave", { event: { id: e ? e.id : "", kind: order ? "order" : "event", act: order ? "order" : f.act, title: f.title, start, end, allDay: !order && f.allDay, venue: order ? "" : f.venue, note: f.note,
