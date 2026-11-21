@@ -227,6 +227,19 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .matte .over h3{margin:6px 0 4px}.matte .over p{color:var(--muted);font-size:14px;margin:0 0 14px}
 .prevbar{background:#2f3240;color:#fff;text-align:center;font-size:13px;font-weight:600;padding:8px}
 .consent{font-size:12.5px;color:var(--muted);text-align:center;margin:0 0 6px;line-height:1.4}
+.years{display:flex;gap:8px;overflow-x:auto;margin:2px 0 12px}
+.memyc{display:block;width:100%;text-align:left;border:0;border-radius:16px;padding:16px;margin-bottom:12px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#2a2d3d,#6b4f5c 70%,#b8766d);font:inherit}
+.memyc b{display:block;font-size:18px}.memyc span{display:block;font-size:13px;opacity:.85;margin-top:2px}.memyc em{display:inline-block;margin-top:10px;font-style:normal;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.16)}
+.memyc.off{cursor:default}
+.memsec{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 2px 8px}
+.memhl{display:block;width:100%;padding:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card);margin-bottom:12px;cursor:pointer;font:inherit;text-align:left}
+.memhl .top{background:linear-gradient(135deg,#c98a7f,#e8b9a6);color:#fff;padding:12px 14px}.memhl .top b{display:block;font-size:16px}.memhl .top span{font-size:12.5px}
+.memhl .grid{border-radius:0}
+.memadm{text-align:left}.memadm .btns{margin-top:10px}
+.evcover.rose{background:linear-gradient(160deg,#c98a7f,#e8b9a6)}.evcover.night{background:linear-gradient(180deg,#1b1d29,#2a2d3d 60%,#4b4255)}
+.mstats{display:flex;gap:8px;margin-top:12px}.mstats div{flex:1;background:rgba(255,255,255,.14);border-radius:12px;padding:8px;text-align:center}.mstats b{display:block;font-size:20px}.mstats span{font-size:11px;opacity:.9}
+.tile.big{width:100%;aspect-ratio:4/3;border-radius:14px;display:block}.tile.big img{object-fit:cover}
+.mrow{display:flex;justify-content:space-between;gap:10px;width:100%;border:0;border-bottom:1px solid #f1ece4;background:none;padding:10px 0;text-align:left;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}.mrow:last-child{border-bottom:0}.mrow small{color:var(--muted);white-space:nowrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 </style>
 </head>
@@ -257,13 +270,13 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
     </div>
   </section>
   <section id="tab-events" hidden><div id="evList"></div></section>
-  <section id="tab-memories" hidden><div class="card soon"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.9.4-3.7 3.2 1.1 4.8L12 13.9l-4.2 2.6 1.1-4.8-3.7-3.2 4.9-.4z"/><path d="M5 20.5h14"/></svg></div><h3>Memories are coming soon</h3><p>Monthly highlights and yearly EXO Memory cards.</p></div></section>
+  <section id="tab-memories" hidden><div id="memV"></div></section>
 </main>
 
 <nav class="tabs"><div class="row">
   <button class="on" data-tab="moments"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/></svg>Moments</button>
   <button data-tab="events"><span class="ndot" id="evDot" hidden></span><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2 2 4-4"/></svg>Events</button>
-  <button class="dim" data-tab="memories"><span class="soonlbl">Soon</span><svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.9.4-3.7 3.2 1.1 4.8L12 13.9l-4.2 2.6 1.1-4.8-3.7-3.2 4.9-.4z"/><path d="M5 20.5h14"/></svg>Memories</button>
+  <button data-tab="memories"><svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.9.4-3.7 3.2 1.1 4.8L12 13.9l-4.2 2.6 1.1-4.8-3.7-3.2 4.9-.4z"/><path d="M5 20.5h14"/></svg>Memories</button>
 </div></nav>
 
 <div class="evpage" id="evPage" hidden></div>
@@ -421,7 +434,7 @@ function openApp() {
 }
 
 // links like …/xverse/?ev=<event>&ref=<FC code> open straight on the event (the code credits the FC who shared it)
-const DEEP = (() => { const q = new URLSearchParams(location.search); const d = { ev: q.get("ev") || "", ref: q.get("ref") || "" };
+const DEEP = (() => { const q = new URLSearchParams(location.search); const d = { ev: q.get("ev") || "", ref: q.get("ref") || "", mem: q.get("mem") || "" };
   try { if (d.ref) sessionStorage.setItem("xv-ref", d.ref); else d.ref = sessionStorage.getItem("xv-ref") || ""; } catch (e) {} return d; })();
 let deepDone = false;
 function afterOpen() {
@@ -432,6 +445,7 @@ function afterOpen() {
         <div class="btns"><button class="btn ghost" data-switch>Switch account</button><button class="btn rose" data-close>Continue as guest</button></div>`);
       sh.addEventListener("click", ev => { if (ev.target.closest("[data-switch]")) sh.remove(); }); } }
   if (guest && S.tab !== "events") showTab("events");
+  if (DEEP.mem && !deepDone && !guest) { deepDone = true; S.memYear = DEEP.mem; S.memOpenCard = true; return showTab("memories"); }
   if (DEEP.ev && !deepDone) {
     deepDone = true;
     if (S.events.some(e => e.id === DEEP.ev)) { showTab("events"); openEvent(DEEP.ev); }
@@ -459,8 +473,12 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && S.s
 /* ---------- album ---------- */
 const alias = full => { const p = S.people.find(x => x.n === full); return p ? p.a : full; };
 const isPerson = full => S.people.some(x => x.n === full);
+// Moments shows one year (this year unless picked from Memories); tags, people, events and "new" look across every year
+const SG_Y = () => new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 4);
+const yearOfIt = x => new Date(ms(x.taken || x.at) + 8 * 3600e3).toISOString().slice(0, 4);
 function filtered() {
-  const f = S.filter, it = S.items || [];
+  const f = S.filter, all = S.items || [], yr = S.yr || SG_Y();
+  const it = ["all", "me", "mine"].includes(f.k) ? all.filter(x => yearOfIt(x) === yr) : all;
   if (f.k === "new") return it.filter(isNew);
   if (f.k === "me") return it.filter(x => S.me && x.people.includes(S.me.name));
   if (f.k === "mine") return it.filter(x => x.mine);
@@ -484,7 +502,8 @@ function render() {
   (S.items || []).forEach(x => { if (x.ev) evHas[x.ev] = (evHas[x.ev] || 0) + 1; });
   const curEv = Object.keys(evHas).filter(id => S.evLabels[id] && ms(S.evLabels[id].at) >= cutoff).sort((a, b) => ms(S.evLabels[b].at) - ms(S.evLabels[a].at));
   const f = S.filter, on = (k, v) => f.k === k && (v === undefined || f.v === v) ? " on" : "";
-  let chips = `<button class="chip${on("all")}" data-f="all">All</button>`;
+  let chips = S.yr && S.yr !== SG_Y() ? `<button class="chip on" data-yrx>${esc(S.yr)} photos ×</button>` : "";
+  chips += `<button class="chip${on("all")}" data-f="all">All</button>`;
   const nNew = (S.items || []).filter(isNew).length;
   if (nNew || f.k === "new") chips += `<button class="chip${on("new")}" data-f="new">New for you${nNew ? " · " + nNew : ""}</button>`;
   if (me.role === "member") chips += `<button class="chip${on("me")}" data-f="me">Photos of me</button>`;
@@ -501,7 +520,8 @@ function render() {
   const v = list.filter(x => x.video).length, p = list.length - v;
   const part = (n, w) => n ? `${n} ${w}${n === 1 ? "" : "s"}` : "";
   $("count").textContent = [part(p, "photo"), part(v, "video")].filter(Boolean).join(" · ");
-  $("foot").innerHTML = `Signed in as ${esc(me.alias || "")} (${esc(me.email || "")}) · <button class="linkbtn" data-switch>Switch account</button>`;
+  const older = (S.items || []).some(x => yearOfIt(x) < (S.yr || SG_Y()));
+  $("foot").innerHTML = (older && ["all", "me", "mine"].includes(f.k) && !S.yr ? `Earlier years are in <button class="linkbtn" data-tab="memories">Memories</button><br>` : "") + `Signed in as ${esc(me.alias || "")} (${esc(me.email || "")}) · <button class="linkbtn" data-switch>Switch account</button>`;
   const empty = $("empty");
   if (!list.length) {
     $("grid").innerHTML = "";
@@ -610,7 +630,7 @@ function upright(url, it) {
 const VW = { i: 0, list: [], hd: null };            // hd = { id, blob, url }
 const fmtWhen = iso => iso ? new Date(iso).toLocaleString("en-SG", { timeZone: "Asia/Singapore", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) : "";
 function openViewer(i) {
-  VW.list = filtered(); VW.i = i;
+  VW.list = filtered(); VW.i = i; VW.mem = false;
   $("viewer").hidden = false; document.body.style.overflow = "hidden";
   showItem();
 }
@@ -642,6 +662,7 @@ function viewerBits(it) {
   $("vAct").innerHTML = (it.video ? "" : `<button class="vbtn" data-hd>${ICON.hd}<span>View HD</span></button>`)
     + `<button class="vbtn" data-dl>${ICON.dl}<span>Save HD${mb}</span></button>`
     + (S.me && S.me.canSocial || it.c ? `<button class="vbtn" data-comments aria-label="Comments">${ICON.chat}<span>${it.c ? it.c : "Comment"}</span></button>` : "")
+    + (VW.mem && S.me && S.me.core ? `<button class="vbtn" data-memhide aria-label="Remove from Memories">${ICON.del}<span>Off cards</span></button>` : "")
     + (it.canEdit ? `<button class="vbtn" data-tagedit aria-label="Tag people">${ICON.tag}<span>Tag</span></button><button class="vbtn del" data-del aria-label="Delete">${ICON.del}</button>` : "");
   socRender(it);
   $("vPrev").style.visibility = VW.i > 0 ? "" : "hidden";
@@ -738,6 +759,8 @@ function whenText(e) {
   const s = sgParts(e.start), en = sgParts(e.end || e.start), wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][s.wd];
   const day = `${wd} ${s.d} ${MON[s.m]} ${s.y}`;
   if (e.allDay) return day;
+  const sameDay = en.y === s.y && en.m === s.m && en.d === s.d;
+  if (!sameDay) return `${day} · ${fmtTime(s)} – ${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][en.wd]} ${en.d} ${MON[en.m]}, ${fmtTime(en)}`;
   return `${day} · ${fmtTime(s)}${(en.hh !== s.hh || en.mm !== s.mm) ? "–" + fmtTime(en) : ""}`;
 }
 const evLabel = id => { const e = S.events.find(x => x.id === id); return e ? { t: e.title, tag: e.tag, at: e.start } : null; };
@@ -759,8 +782,9 @@ function evDot() {
 }
 function showTab(t) {
   S.tab = t;
-  ["moments", "events"].forEach(x => { $("tab-" + x).hidden = x !== t; });
+  ["moments", "events", "memories"].forEach(x => { $("tab-" + x).hidden = x !== t; });
   document.querySelectorAll("nav.tabs button[data-tab]").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  if (t === "memories") { evDot(); window.scrollTo(0, 0); return openMemories(); }
   if (t === "events") {
     try { localStorage.setItem("xv-evseen", String(Date.now())); } catch (e) {}
     renderEvents(); evDot();
@@ -911,7 +935,7 @@ function openBuilder(e, kindNew) {
   const f = e ? Object.assign({}, e, { groups: (e.groups || []).slice(), people: (e.people || []).slice(), form: JSON.parse(JSON.stringify(e.form || [])), pay: e.pay ? Object.assign({}, e.pay) : { on: false, amount: 0, details: "" } })
     : { title: "", start: wk, end: "", allDay: false, venue: "", note: "", see: "groups", groups: ["core", "xcademy"], people: [], album: !order, tag: "", cal: !order,
         act: order ? "order" : "fyi", kind: order ? "order" : "event", form: order ? [{ id: "q0", type: "items", label: "Items", required: false, options: [] }] : [], deadline: "", pay: { on: false, amount: 0, details: "" }, max: 0, finexisClose: "" };
-  let date = sgDateStr(f.start), t1 = f.allDay || isNew ? "10:00" : sgTimeStr(f.start), t2 = f.allDay || !f.end || isNew ? "" : sgTimeStr(f.end);
+  let date = sgDateStr(f.start), date2 = f.end && !isNew ? sgDateStr(f.end) : sgDateStr(f.start), t1 = f.allDay || isNew ? "10:00" : sgTimeStr(f.start), t2 = f.allDay || !f.end || isNew ? "" : sgTimeStr(f.end);
   let dlD = f.deadline ? sgDateStr(f.deadline) : "", dlT = f.deadline ? sgTimeStr(f.deadline) : "23:59", finD = f.finexisClose ? sgDateStr(f.finexisClose) : "";
   let tabName = f.tab ? f.tab.name : "";
   let tagTouched = !!f.tag, calOn = isNew ? !order : !!f.cal;
@@ -930,7 +954,8 @@ function openBuilder(e, kindNew) {
           <label>Title</label><input id="bT" value="${esc(f.title)}" maxlength="120" placeholder="${order ? "e.g. Raya Green Packets 2027" : "e.g. Nov Anniversary Lunch"}">
           ${order ? "" : `<label>Date</label>${f.recurring ? `<div class="pick"><span>${esc(dateLbl(date))}</span></div>` : pick("bD", "date", date)}
           <div class="swr"><span>All day</span><button class="sw${f.allDay ? " on" : ""}" data-bsw="allDay"></button></div>
-          ${f.allDay ? "" : `<div class="two"><div><label>Starts</label>${pick("bS", "time", t1)}</div><div><label>Ends</label>${pick("bE", "time", t2)}</div></div>`}
+          ${f.allDay ? "" : `<div class="two"><div><label>Starts</label>${pick("bS", "time", t1)}</div><div><label>Ends</label>${pick("bE", "time", t2)}</div></div>
+          ${f.recurring ? "" : `<label>End date</label>${pick("bD2", "date", date2)}`}`}
           <label>Venue</label><input id="bV" value="${esc(enPlace(f.venue))}" maxlength="200">`}
           <label>Note</label><textarea id="bN" maxlength="1000">${esc(f.note)}</textarea></div>
         <div class="card" style="text-align:left"><b>2 · ${order ? "Who can order" : "Who can see it"}</b><div class="seg2" style="margin-top:8px">
@@ -971,7 +996,12 @@ function openBuilder(e, kindNew) {
   const defaultTab = () => { const d = order ? (dlD || sgDateStr(new Date().toISOString())) : date; const p = new Date(d + "T12:00:00+08:00"); return `${MON[p.getMonth()]} ${String(p.getFullYear()).slice(2)} ${f.title || (order ? "Order" : "Event")}`; };
   const grab = () => {
     f.title = $("bT").value.trim(); f.note = $("bN").value.trim();
-    if ($("bD")) date = $("bD").value;
+    {                                                    // end date follows the start date unless it was set to another day
+      const nd = $("bD") ? $("bD").value : date; let nd2 = $("bD2") ? $("bD2").value : date2;
+      if (nd !== date && nd2 === date) nd2 = nd;
+      if (!nd2 || nd2 < nd) nd2 = nd;
+      date = nd; date2 = nd2;
+    }
     if ($("bV")) f.venue = $("bV").value.trim();
     if ($("bTag")) f.tag = $("bTag").value.replace(/[^A-Za-z0-9]/g, "");
     if ($("bS")) { t1 = $("bS").value || "10:00"; t2 = $("bE").value; }
@@ -1028,14 +1058,15 @@ function openBuilder(e, kindNew) {
       if (order && f.pay.on && !finD) return draw("Please set when the finexis order closes, so screenshots can be cleared after.");
       const deadline = rsvp ? `${dlD}T${dlT || "23:59"}:00+08:00` : "";
       const start = order ? deadline : f.allDay ? `${date}T00:00:00+08:00` : `${date}T${t1}:00+08:00`;
-      const end = order ? deadline : f.allDay ? start : `${date}T${t2 || t1}:00+08:00`;
+      const end = order ? deadline : f.allDay ? start : `${f.recurring ? date : date2 || date}T${t2 || t1}:00+08:00`;
+      if (!order && !f.allDay && t2 && new Date(end) <= new Date(start)) return draw("The end is before the start. For an overnight event, change the End date.");
       b.disabled = true; b.innerHTML = LOADING;
       call("eventsave", { event: { id: e ? e.id : "", kind: order ? "order" : "event", act: order ? "order" : f.act, title: f.title, start, end, allDay: !order && f.allDay, venue: order ? "" : f.venue, note: f.note,
         see: f.see, groups: f.groups, people: f.people, rule: f.rule || null, album: !order && f.album, tag: order ? "" : f.tag, cal: !order && calOn,
         deadline, form: rsvp ? f.form : [], max: f.max || 0, pay: rsvp ? f.pay : { on: false }, finexisClose: order && finD ? `${finD}T23:59:00+08:00` : "", tabName } })
         .then(r => {
           if (!r.ok) { return draw({ tag_year: "The tag needs the year.", tag_taken: "That tag is already used by another event. Please change it.", tag_missing: "Please add a tag for the album.", title: "Please add a title.", date: "Please pick a date.",
-            deadline: "Please set when it closes.", form: "Each choice question needs its choices.", finexis: "Please set when the finexis order closes." }[r.error] || "Couldn't save. Try again."); }
+            deadline: "Please set when it closes.", end_before_start: "The end is before the start. For an overnight event, change the End date.", form: "Each choice question needs its choices.", finexis: "Please set when the finexis order closes." }[r.error] || "Couldn't save. Try again."); }
           const i = S.events.findIndex(x => x.id === r.event.id);
           const merged = Object.assign({}, i >= 0 ? S.events[i] : {}, r.event, { photos: i >= 0 ? S.events[i].photos : 0 });
           if (i >= 0) S.events[i] = merged; else S.events.push(merged);
@@ -1326,6 +1357,140 @@ function openGuests() {
       call("guestremove", { email: b.dataset.grm }).then(r => { if (!r.ok) throw 0; toast("Removed"); load(); }).catch(() => toast("Couldn't remove. Try again"));
     }
   };
+}
+/* ---------- Memories: monthly Highlights · yearly EXO Memory card · archive ---------- */
+const MONL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const ymLabel = ym => MONL[+ym.slice(5) - 1] + " " + ym.slice(0, 4);
+function openMemories() {
+  const V = $("memV"), year = S.memYear || SG_Y();
+  if (!S.memCache || S.memCache.year !== year) V.innerHTML = `<div class="card"><p>${LOADING}</p></div>`;
+  else drawMemories(S.memCache);
+  call("memories", { year }).then(r => {
+    if (!r.ok) throw 0;
+    S.memCache = r; if (S.tab === "memories") drawMemories(r);
+    if (S.memOpenCard) { S.memOpenCard = false; if (["ready", "preview"].includes(r.card.state)) openCard(r.card); }
+  }).catch(() => { if (!S.memCache) V.innerHTML = `<div class="card"><p>Couldn't load Memories. <button class="linkbtn" data-tab="memories">Try again</button></p></div>`; });
+}
+const mtile = (id, list, big) => { const it = byId(id); if (!it) return ""; return `<button class="tile${big ? " big" : ""}" data-id="${esc(id)}" data-mv="${esc(id)}" data-ml="${list}"><img alt="">${it.video ? `<span class="vb">${ICON.play}</span>` : ""}</button>`; };
+function fillTiles(root) {
+  root.querySelectorAll(".tile[data-id]").forEach(t => { const u = TH[t.dataset.id + "|400"]; if (u) setImg(t.querySelector("img"), u); else observer().observe(t); });
+  root.querySelectorAll(".tile.big[data-id]").forEach(t => getThumbs([t.dataset.id], 1600).then(() => { const u = TH[t.dataset.id + "|1600"]; if (u) setImg(t.querySelector("img"), u); }));
+}
+function drawMemories(r) {
+  const V = $("memV"), y = r.year, a = r.admin, c = r.card, nx = String(+y + 1);
+  let h = `<div class="years">${r.years.map(x => `<button class="chip${x === y ? " on" : ""}" data-my="${x}">${x}</button>`).join("")}</div>`;
+  const cardTxt = { later: `Opens on 1 Jan ${nx}`, soon: "Coming soon", ready: "Open your card", preview: "Preview (not released yet)", nocard: "No card for this account", "preview-none": "Built · no card for this account" }[c.state];
+  if (cardTxt) h += `<button class="memyc${["ready", "preview"].includes(c.state) ? "" : " off"}" data-mcard><b>EXO Memory ${y}</b><span>Your year with EXO, on one card</span><em>${cardTxt}</em></button>`;
+  if (a) {
+    let ctl = "";
+    if (!a.built && y < SG_Y()) ctl += `<button class="btn ghost" data-mbuild>Build ${y} cards now</button>`;
+    if (a.built && !a.released) ctl += `<button class="btn ghost" data-mbuild>Rebuild</button><button class="btn rose" data-mrel>Release ${y}</button>`;
+    if (a.released) ctl += `<button class="btn ghost" data-msend>${a.sent ? `Emails sent: ${a.sent}${a.sending ? " (more at 9am)" : ""}` : "Send email to FCs"}</button>`;
+    if (a.canArchive) ctl += `<button class="btn ghost" data-march style="color:var(--bad)">Archive ${y}…</button>`;
+    const st = a.archive && a.archive.running ? `<p class="sub">Archiving ${y}: ${a.archive.done} of ${a.archive.total} photos checked. Runs every 10 min.</p>`
+      : a.archive && a.archive.finished ? `<p class="sub">${y} archived on ${fmtWhen(a.archive.finished)}.</p>` : "";
+    const line = a.released ? `Released · ${a.sent} of ${a.people} emailed` : a.built ? `Built ${fmtWhen(a.built)} · only the core team can see it` : y < SG_Y() ? "Not built yet" : `Cards are built on 1 Jan ${nx}`;
+    if (ctl || st || y >= SG_Y()) h += `<div class="card memadm"><b>Core team</b><p class="sub">${line}${a.hidden ? ` · ${a.hidden} photo${a.hidden > 1 ? "s" : ""} kept off cards` : ""}</p>${st}${ctl ? `<div class="btns" style="justify-content:flex-start;flex-wrap:wrap">${ctl}</div>` : ""}</div>`;
+  }
+  h += `<div class="memsec">Highlights</div>`;
+  h += r.highlights.length ? r.highlights.map(x => `<div class="memhl" role="button" tabindex="0" data-mhl="${x.ym}"><div class="top"><b>Highlights · ${ymLabel(x.ym)}</b><span>${[x.photos + " photo" + (x.photos > 1 ? "s" : ""), x.events.length ? x.events.length + " event" + (x.events.length > 1 ? "s" : "") : "", x.reactions + " reaction" + (x.reactions === 1 ? "" : "s")].filter(Boolean).join(" · ")}</span></div>
+      <div class="grid">${x.top.slice(0, 6).map(id => mtile(id, "hl:" + x.ym)).join("")}</div></div>`).join("")
+    : `<div class="card"><p>${y === SG_Y() ? `No Highlights yet. Each month's card appears on the 1st of the next month.` : `No Highlights for ${y}.`}</p></div>`;
+  h += `<p class="foot"><button class="linkbtn" data-myall>See all ${y} photos</button></p>`;
+  V.innerHTML = h; fillTiles(V);
+  V.onclick = ev => {
+    const b = ev.target.closest("button,[data-mhl]"); if (!b) return;
+    if (b.dataset.my) { S.memYear = b.dataset.my; return openMemories(); }
+    if (b.dataset.myall !== undefined) { S.yr = y; S.filter = { k: "all" }; showTab("moments"); return render(); }
+    if (b.dataset.mv && b.closest(".memhl")) { ev.stopPropagation(); const hl = r.highlights.find(x => "hl:" + x.ym === b.dataset.ml); return memView(hl.top, b.dataset.mv); }
+    if (b.dataset.mhl) return openHighlight(r.highlights.find(x => x.ym === b.dataset.mhl));
+    if (b.dataset.mcard !== undefined) { if (["ready", "preview"].includes(c.state)) return openCard(c); return; }
+    if (b.dataset.mbuild !== undefined) return memAct("membuild", { year: y }, "Cards built. Only the core team can see them until you release.");
+    if (b.dataset.mrel !== undefined) { if (!confirm(`Release EXO Memory ${y}? Every FC will see their card in Xverse. This can't be undone.`)) return; return memAct("memrelease", { year: y }, "Released"); }
+    if (b.dataset.msend !== undefined) { if (a.sent && !a.sending) return toast("Everyone with an email has been sent theirs"); if (!confirm(`Email every FC that their EXO Memory ${y} is ready?`)) return; return memAct("memsend", { year: y }, null, x => toast(`${x.sent} sent` + (x.left ? ` · ${x.left} more at 9am tomorrow` : ""))); }
+    if (b.dataset.march !== undefined) return archiveSheet(y);
+  };
+}
+function memAct(action, body, msg, after) {
+  call(action, body, 120000).then(x => { if (!x.ok) throw x; msg && toast(msg); after && after(x); S.memCache = null; openMemories(); })
+    .catch(x => toast((x && { released: "Already released", not_built: "Build the cards first", not_released: "Release the cards first" }[x.error]) || "Couldn't do that. Try again"));
+}
+function archiveSheet(y) {
+  const sh = sheet(`<h3>Archive ${y}?</h3><p class="sub">Every ${y} photo is shrunk to 2560 px to free up Drive space. Tags, reactions and comments stay. Videos are kept as they are.</p>
+    <p class="sub" style="color:var(--bad);font-weight:700">This is permanent: the full-size originals are deleted.</p><div class="fm"><label>Type ARCHIVE ${y} to confirm</label><input id="arQ" autocomplete="off" autocapitalize="characters"></div>
+    <div class="btns"><button class="btn ghost" data-close>Cancel</button><button class="btn rose" id="arGo" disabled>Archive</button></div>`);
+  const q = sh.querySelector("#arQ"), go = sh.querySelector("#arGo");
+  q.oninput = () => { go.disabled = q.value.trim().toUpperCase() !== "ARCHIVE " + y; };
+  go.onclick = () => { go.disabled = true; call("archive", { year: y, confirm: "ARCHIVE " + y }).then(x => { if (!x.ok) throw x; sh.remove(); toast(`Archiving ${x.total} photos. You'll get an email when it's done.`); S.memCache = null; openMemories(); })
+    .catch(x => { go.disabled = false; toast((x && { running: "An archive is already running", done: "Already archived" }[x.error]) || "Couldn't start. Try again"); }); };
+}
+function memView(ids, id) {
+  const list = ids.map(byId).filter(Boolean); const i = Math.max(0, list.findIndex(x => x.id === id));
+  if (!list.length) return;
+  VW.list = list; VW.i = i; VW.mem = true;
+  $("viewer").hidden = false; document.body.style.overflow = "hidden"; showItem();
+}
+function memHideItem(b) {
+  const it = VW.list[VW.i]; if (!it || !confirm("Take this photo off every EXO Memory card and Highlights? It stays in Moments.")) return;
+  call("memhide", { id: it.id }).then(x => { if (!x.ok) throw 0; toast("Taken off Memories"); S.memCache = null; VW.list.splice(VW.i, 1); if (!VW.list.length) return closeViewer(); VW.i = Math.min(VW.i, VW.list.length - 1); showItem(); })
+    .catch(() => toast("Couldn't do that. Try again"));
+}
+function memPage(cls, cover, body, wire) {
+  const P = $("evPage");
+  P.innerHTML = `<div class="evcover ${cls}"><button class="evback" data-mback aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>${cover}</div><div class="evbody">${body}</div>`;
+  P.hidden = false; P.scrollTop = 0; document.body.style.overflow = "hidden"; fillTiles(P);
+  P.onclick = ev => { const b = ev.target.closest("button"); if (!b) return; if (b.dataset.mback !== undefined) return closeEvent(); wire(b, ev); };
+}
+const statRow = list => { const l = list.filter(x => x[0]); return l.length ? `<div class="mstats">${l.map(x => `<div><b>${x[0]}</b><span>${x[1]}</span></div>`).join("")}</div>` : ""; };
+function openHighlight(x) {
+  const top = x.top, rest = top.slice(1);
+  memPage("rose", `<h2>${ymLabel(x.ym)}</h2><p>Highlights</p>${statRow([[x.photos, "photos"], [x.events.length, "events"], [x.reactions, "reactions"]])}`,
+    (top[0] ? `<div class="memsec">Most-loved this month</div>${mtile(top[0], "t", true)}` : "") + (rest.length ? `<div class="grid" style="margin-top:3px">${rest.map(id => mtile(id, "t")).join("")}</div>` : "")
+    + (x.events.length ? `<div class="memsec">Events this month</div><div class="card" style="padding:4px 14px;text-align:left">${x.events.map(e => `<button class="mrow" data-mev="${esc(e.id)}"><span>${esc(e.t)}</span><small>${e.n} photo${e.n > 1 ? "s" : ""} ›</small></button>`).join("")}</div>` : "")
+    + (x.tags.length ? `<div class="memsec">Top hashtags</div><div class="chips" style="flex-wrap:wrap">${x.tags.map(t => `<button class="chip" data-mtag="${esc(t)}">#${esc(t)}</button>`).join("")}</div>` : ""),
+    b => {
+      if (b.dataset.mv) return memView(top, b.dataset.mv);
+      if (b.dataset.mev) { closeEvent(); S.filter = { k: "event", v: b.dataset.mev }; showTab("moments"); return render(); }
+      if (b.dataset.mtag) { closeEvent(); S.filter = { k: "tag", v: b.dataset.mtag }; showTab("moments"); return render(); }
+    });
+}
+function openCard(c) {
+  const all = [c.hero].concat(c.inn, c.fav).filter(Boolean), more = { inn: 9 };
+  const draw = () => {
+    const st = c.stats || {};
+    memPage("night", `<h2>EXO Memory ${esc(c.year)}</h2><p>${esc(c.alias || "")}${c.state === "preview" ? " · preview" : ""}</p>${statRow([[st.inn, "photos you're in"], [st.events, "events"], [st.love, "reactions"]])}`,
+      (c.hero ? `<div class="memsec">${c.heroKind === "loved" ? "Your most-loved photo" : "A moment from your year"}</div>${mtile(c.hero, "c", true)}` : "")
+      + (c.inn.length ? `<div class="memsec">Photos you're in</div><div class="grid">${c.inn.slice(0, more.inn).map(id => mtile(id, "c")).join("")}</div>${c.inn.length > more.inn ? `<button class="calbtn" data-mmore style="margin-top:8px">See more (${c.inn.length - more.inn})</button>` : ""}` : "")
+      + (c.events.length ? `<div class="memsec">Events you joined</div><div class="card" style="padding:4px 14px;text-align:left">${c.events.map(e => `<button class="mrow" data-mev="${esc(e.id)}"><span>${esc(e.t)}</span><small>${(p => p.d + " " + MON[p.m])(sgParts(e.at))} ›</small></button>`).join("")}</div>` : "")
+      + (c.comments.length ? `<div class="memsec">Comments on your photos</div><div class="card" style="text-align:left">${c.comments.map(x => `<button class="mrow" data-mv="${esc(x.f)}"><span><b>${esc(x.by)}</b> ${esc(x.v)}</span></button>`).join("")}</div>` : "")
+      + (c.fav.length ? `<div class="memsec">Team favourites of ${esc(c.year)}</div><div class="grid">${c.fav.map(id => mtile(id, "c")).join("")}</div>` : "")
+      + (!all.length ? `<div class="card"><p>No photos from ${esc(c.year)} yet.</p></div>` : `<button class="btn rose" data-msave style="width:100%;margin-top:18px">Save my photos</button>`),
+      b => {
+        if (b.dataset.mv) return memView(all, b.dataset.mv);
+        if (b.dataset.mmore !== undefined) { more.inn += 12; const y = $("evPage").scrollTop; draw(); $("evPage").scrollTop = y; return; }
+        if (b.dataset.mev) { closeEvent(); S.filter = { k: "event", v: b.dataset.mev }; showTab("moments"); return render(); }
+        if (b.dataset.msave !== undefined) return saveSet([c.hero].concat(c.inn).filter(Boolean));
+      });
+  };
+  draw();
+}
+// "Save my photos": in sets of 10 (phone size), via the phone's share sheet, or downloads on a computer
+function saveSet(ids) {
+  if (!ids.length) return toast("No photos of you yet");
+  const sets = []; for (let i = 0; i < ids.length; i += 10) sets.push(ids.slice(i, i + 10));
+  const sh = sheet(`<h3>Save my photos</h3><p class="sub">${ids.length} photo${ids.length > 1 ? "s" : ""}, in sets of 10. Videos: open them and tap Save HD.</p>
+    <div class="plist" style="max-height:40vh">${sets.map((s, i) => `<button data-set="${i}"><b>Photos ${i * 10 + 1}–${i * 10 + s.length}</b><small>Save</small></button>`).join("")}</div><div class="btns"><button class="btn ghost" data-close>Done</button></div>`);
+  sh.addEventListener("click", async ev => {
+    const b = ev.target.closest("[data-set]"); if (!b) return;
+    const set = sets[+b.dataset.set].filter(id => { const it = byId(id); return it && !it.video; });
+    b.querySelector("small").textContent = "Getting…";
+    await getThumbs(set, 1600);
+    const files = await Promise.all(set.map(async (id, k) => { const u = TH[id + "|1600"]; if (!u) return null; const bl = await (await fetch(u)).blob(); return new File([bl], `EXO-${k + 1 + +b.dataset.set * 10}.jpg`, { type: "image/jpeg" }); }));
+    const ok = files.filter(Boolean);
+    if (navigator.canShare && navigator.canShare({ files: ok })) { try { await navigator.share({ files: ok }); b.querySelector("small").textContent = "Saved ✓"; } catch (e) { b.querySelector("small").textContent = "Tap to save"; } return; }
+    ok.forEach(f => { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); });
+    b.querySelector("small").textContent = "Downloaded ✓";
+  });
 }
 /* ---------- reactions & comments ---------- */
 const QUICK = ["❤️", "😂", "😍", "👏", "🔥", "😮", "🥳", "🙏", "👍", "💯", "😢", "🤩"];
@@ -1748,7 +1913,7 @@ function peopleSheet() {
 document.addEventListener("click", e => {
   const b = e.target.closest("button, .tile"); if (!b) return;
   if (b.dataset.switch !== undefined) return switchAccount();
-  if (b.classList.contains("tile")) return openViewer(+b.dataset.i);
+  if (b.classList.contains("tile") && b.dataset.i !== undefined) return openViewer(+b.dataset.i);
   if (b.dataset.f) { S.filter = { k: b.dataset.f, v: b.dataset.v }; return render(); }
   if (b.dataset.people !== undefined) return peopleSheet();
   if (b.dataset.hd !== undefined) return viewHd(b);
@@ -1761,10 +1926,12 @@ document.addEventListener("click", e => {
   if (b.dataset.del !== undefined) return deleteItem(b);
   if (b.dataset.upretry !== undefined) { const row = b.closest(".uprow"), job = row && row._job; if (job) { job.state = "waiting"; job.retry = false; upRow(job); UP.queue.push(job); runUploads(); } return; }
   if (b.dataset.tab) {
-    if (b.dataset.tab === "memories") return toast(S.me && S.me.role === "guest" ? "Memories are for EXOians" : "Memories are coming soon");
+    if (b.dataset.tab === "memories" && S.me && S.me.role === "guest") return toast("Memories are for EXOians");
     return showTab(b.dataset.tab);
   }
   if (b.dataset.talk !== undefined) return talkSheet();
+  if (b.dataset.yrx !== undefined) { S.yr = ""; return render(); }
+  if (b.dataset.memhide !== undefined) return memHideItem(b);
   if (b.dataset.guests !== undefined) return openGuests();
   if (b.dataset.evnew !== undefined) return openBuilder(null);
   if (b.dataset.ordnew !== undefined) return openBuilder(null, "order");
