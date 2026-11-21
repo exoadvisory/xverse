@@ -108,6 +108,13 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
 .sheet label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin:10px 0 6px;display:block}
 .sheet input,.sheet select{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
 .sheet select,.fm select{-webkit-appearance:none;appearance:none;min-height:46px;padding-right:36px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%232f3240' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center}
+.tsbig{margin:4px 0 6px;border-radius:12px;overflow:hidden;background:#1f2230;display:flex;justify-content:center}
+.tsbig img,.tsbig video{display:block;max-width:100%;max-height:30vh;object-fit:contain}
+.tsstrip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;-webkit-overflow-scrolling:touch}
+.tsstrip button{position:relative;flex:none;width:64px;height:64px;padding:0;border:2px solid transparent;border-radius:9px;overflow:hidden;background:#ddd;cursor:pointer}
+.tsstrip button.on{border-color:var(--rose2)}
+.tsstrip img,.tsstrip video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.tsstrip .vb{position:absolute;right:4px;bottom:3px;color:#fff;font-size:11px;text-shadow:0 1px 3px rgba(0,0,0,.7)}
 .picked{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .picked button{border:0;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600;background:var(--ink);color:#fff;cursor:pointer}
 .picked button.h{background:var(--rose2)}
@@ -1425,11 +1432,17 @@ function commentsSheet(it) {
 }
 
 /* ---------- tag sheet (upload batch or one photo) ---------- */
-function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events }) {
+function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events, files }) {
   return new Promise(done => {
     const sel = new Set(people || []), hs = [...(tags || [])];
+    // see what you're tagging: the chosen photos/videos (from this phone, nothing is uploaded yet)
+    const urls = (files || []).map(f => ({ u: URL.createObjectURL(f), v: f.type.startsWith("video/") }));
+    const media = (x, cls) => x.v ? `<video class="${cls}" src="${x.u}#t=0.1" muted playsinline preload="metadata"></video>` : `<img class="${cls}" src="${x.u}" alt="">`;
+    const prev = !urls.length ? "" : urls.length === 1 ? `<div class="tsbig">${media(urls[0], "")}</div>`
+      : `<div class="tsbig" id="tsBig">${media(urls[0], "")}</div><div class="tsstrip">${urls.map((x, i) => `<button data-pv="${i}" class="${i ? "" : "on"}">${media(x, "")}${x.v ? `<span class="vb">▶</span>` : ""}</button>`).join("")}</div>`;
+    const freeUrls = () => urls.forEach(x => URL.revokeObjectURL(x.u));
     const shade = document.createElement("div"); shade.className = "shade";
-    shade.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p class="sub">${esc(sub || "")}</p>
+    shade.innerHTML = `<div class="sheet" style="overflow-y:auto" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p class="sub">${esc(sub || "")}</p>${prev}
       <label>People</label><input id="tsQ" placeholder="Type a name to tag someone" autocomplete="off"><div class="plist" id="tsL" hidden style="flex:none;max-height:30vh"></div><div class="picked" id="tsP"></div>
       <label>Hashtags</label><input id="tsH" placeholder="#cedli #teamlunch" autocomplete="off" autocapitalize="none"><div class="picked" id="tsHs"></div>
       ${events && events.length ? `<label>Event</label><select id="tsE"><option value="">No event</option>${events.map(e => `<option value="${esc(e.id)}"${e.id === event ? " selected" : ""}>${esc(e.title)} · ${(p => p.d + " " + MON[p.m])(sgParts(e.start))}</option>`).join("")}</select>` : ""}
@@ -1454,18 +1467,24 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events 
     q.addEventListener("input", draw);
     shade.addEventListener("click", e => {
       const b = e.target.closest("button");
-      if (e.target === shade) { shade.remove(); return done(null); }
+      if (e.target === shade) { shade.remove(); freeUrls(); return done(null); }
       if (!b) return;
+      if (b.dataset.pv !== undefined) {
+        const i = +b.dataset.pv; shade.querySelector("#tsBig").innerHTML = media(urls[i], "");
+        if (urls[i].v) shade.querySelector("#tsBig video").controls = true;
+        shade.querySelectorAll("[data-pv]").forEach(x => x.classList.toggle("on", x === b)); return;
+      }
       if (b.dataset.n) { sel.has(b.dataset.n) ? sel.delete(b.dataset.n) : sel.add(b.dataset.n); q.value = ""; draw(); q.focus(); }
       else if (b.dataset.rm) { sel.delete(b.dataset.rm); draw(); }
       else if (b.dataset.rmh) { hs.splice(hs.indexOf(b.dataset.rmh), 1); draw(); }
       else if (b.dataset.ts) {
-        addTags(); shade.remove();
+        addTags(); shade.remove(); freeUrls();
         const evSel = shade.querySelector("#tsE"), ev = evSel ? evSel.value : (event || "");
         done(b.dataset.ts === "cancel" ? null : b.dataset.ts === "skip" ? { people: [], tags: [], event: ev } : { people: [...sel], tags: hs, event: ev });
       }
     });
     draw();
+    shade.querySelectorAll(".tsbig video").forEach(v => v.controls = true);
   });
 }
 async function editTags(btn) {
@@ -1521,7 +1540,7 @@ async function addUploads(files, preset) {
   if (!ok.length) return;
   const n = ok.length, vids = ok.filter(j => j.file.type.startsWith("video/")).length;
   const what = vids === n ? (n === 1 ? "this video" : `these ${n} videos`) : vids ? `these ${n} photos & videos` : (n === 1 ? "this photo" : `these ${n} photos`);
-  const t = await tagSheet({ title: `Who's in ${what}?`, sub: "Tag people and add hashtags, or skip. You can change it later.", okLabel: `Upload${n > 1 ? " " + n : ""}`, skipLabel: "Skip tags", event: preset || "", events: uploadableEvents(preset) });
+  const t = await tagSheet({ title: `Who's in ${what}?`, sub: "Tag people and add hashtags, or skip. You can change it later.", okLabel: `Upload${n > 1 ? " " + n : ""}`, skipLabel: "Skip tags", files: ok.map(j => j.file), event: preset || "", events: uploadableEvents(preset) });
   if (!t) return;
   ok.forEach(j => { j.people = t.people; j.tags = t.tags; j.event = t.event || ""; upRow(j); UP.queue.push(j); });
   runUploads();
