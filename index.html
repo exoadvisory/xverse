@@ -116,6 +116,7 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
 .tsstrip img,.tsstrip video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .tsstrip .vb{position:absolute;right:4px;bottom:3px;color:#fff;font-size:11px;text-shadow:0 1px 3px rgba(0,0,0,.7)}
 #tsG{margin-top:8px}#tsG .chip.grp{background:#fff}
+.sugs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.sugs:empty{display:none}.sugs .chip{background:#fff;padding:6px 11px}.sugs .chip.ev{border-color:var(--rose2);color:var(--rose2)}
 .picked{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .picked button{border:0;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600;background:var(--ink);color:#fff;cursor:pointer}
 .picked button.h{background:var(--rose2)}
@@ -1626,7 +1627,7 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events,
     const shade = document.createElement("div"); shade.className = "shade";
     shade.innerHTML = `<div class="sheet" style="overflow-y:auto" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p class="sub">${esc(sub || "")}</p>${prev}
       <label>People</label><input id="tsQ" placeholder="Type a name to tag someone" autocomplete="off"><div id="tsG"></div><div class="plist" id="tsL" hidden style="flex:none;max-height:30vh"></div><div class="picked" id="tsP"></div>
-      <label>Hashtags</label><input id="tsH" placeholder="#cedli #teamlunch" autocomplete="off" autocapitalize="none"><div class="picked" id="tsHs"></div>
+      <label>Hashtags</label><input id="tsH" placeholder="#cedli #teamlunch" autocomplete="off" autocapitalize="none"><div class="sugs" id="tsSug"></div><div class="picked" id="tsHs"></div>
       ${events && events.length ? `<label>Event</label><select id="tsE"><option value="">No event</option>${events.map(e => `<option value="${esc(e.id)}"${e.id === event ? " selected" : ""}>${esc(e.title)} · ${(p => p.d + " " + MON[p.m])(sgParts(e.start))}</option>`).join("")}</select>` : ""}
       <div class="btns">${skipLabel ? `<button class="btn ghost" data-ts="skip">${esc(skipLabel)}</button>` : `<button class="btn ghost" data-ts="cancel">Cancel</button>`}<button class="btn rose" data-ts="ok">${esc(okLabel)}</button></div></div>`;
     document.body.appendChild(shade);
@@ -1642,6 +1643,21 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events,
       shade.querySelector("#tsG").innerHTML = ct.length ? `<button class="chip grp" data-tg>${ct.every(p => sel.has(p.n)) ? "✓ " : "+ "}Core Team (${ct.length})</button>` : "";
       HS.innerHTML = hs.map(t => `<button class="h" data-rmh="${esc(t)}">#${esc(t)} ×</button>`).join("");
     };
+    // hashtag suggestions: event tags you can add photos to + hashtags used in the last 30 days; older ones only when typed
+    const SG = shade.querySelector("#tsSug"), cut30 = Date.now() - 30 * 864e5, recent = {}, older = {};
+    (S.items || []).forEach(x => x.tags.forEach(t => { if (ms(x.at) >= cut30) recent[t] = (recent[t] || 0) + 1; else older[t] = 1; }));
+    const drawSug = () => {
+      const q = (H.value.split(/[\s,]+/).pop() || "").toLowerCase().replace(/^#+/, "").replace(/[^a-z0-9_]/g, "");
+      const evSel = shade.querySelector("#tsE"), cur = evSel ? evSel.value : "";
+      const evs = (events || []).filter(e => e.tag && e.id !== cur && (!q || e.tag.toLowerCase().includes(q))).slice(0, q ? 4 : 3).map(e => ({ t: e.tag, ev: e.id }));
+      const rec = Object.keys(recent).sort((a, b) => recent[b] - recent[a] || a.localeCompare(b));
+      const old = q ? Object.keys(older).filter(t => !recent[t]).sort() : [];
+      const tags = rec.concat(old).filter(t => !hs.includes(t) && t !== q && (!q || t.includes(q)) && !evs.some(e => e.t.toLowerCase() === t)).map(t => ({ t }));
+      const list = evs.concat(tags).slice(0, 8);
+      SG.innerHTML = list.map(x => `<button class="chip${x.ev ? " ev" : ""}" data-sg="${esc(x.t)}"${x.ev ? ` data-sev="${esc(x.ev)}"` : ""}>#${esc(x.t)}</button>`).join("");
+    };
+    SG.addEventListener("pointerdown", e => e.preventDefault());       // tapping a suggestion doesn't turn half-typed text into a tag
+    H.addEventListener("input", drawSug);
     const addTags = () => {
       H.value.split(/[\s,]+/).map(t => t.toLowerCase().replace(/^#+/, "").replace(/[^a-z0-9_]/g, "").slice(0, 30)).filter(Boolean)
         .forEach(t => {
@@ -1650,7 +1666,7 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events,
           if (ev && sel2) { sel2.value = ev.id; toast(`Added to ${ev.title}`); return; }
           if (!hs.includes(t) && hs.length < 10) hs.push(t);
         });
-      H.value = ""; draw();
+      H.value = ""; draw(); drawSug();
     };
     H.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " " || e.key === ",") { e.preventDefault(); addTags(); } });
     H.addEventListener("blur", addTags);
@@ -1659,6 +1675,12 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events,
       const b = e.target.closest("button");
       if (e.target === shade) { shade.remove(); freeUrls(); return done(null); }
       if (!b) return;
+      if (b.dataset.sg !== undefined) {
+        const parts = H.value.split(/[\s,]+/); parts.pop(); H.value = parts.join(" ");   // replace what was being typed
+        if (b.dataset.sev) { const es = shade.querySelector("#tsE"); if (es) { es.value = b.dataset.sev; toast(`Added to ${((events || []).find(x => x.id === b.dataset.sev) || {}).title || "the event"}`); } }
+        else { const t = b.dataset.sg.toLowerCase(); if (!hs.includes(t) && hs.length < 10) hs.push(t); }
+        addTags(); H.focus(); return;
+      }
       if (b.dataset.pv !== undefined) {
         const i = +b.dataset.pv; shade.querySelector("#tsBig").innerHTML = media(urls[i], "");
         if (urls[i].v) shade.querySelector("#tsBig video").controls = true;
@@ -1674,7 +1696,8 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events,
         done(b.dataset.ts === "cancel" ? null : b.dataset.ts === "skip" ? { people: [], tags: [], event: ev } : { people: [...sel], tags: hs, event: ev });
       }
     });
-    draw();
+    draw(); drawSug();
+    shade.querySelector("#tsE") && shade.querySelector("#tsE").addEventListener("change", drawSug);
     shade.querySelectorAll(".tsbig video").forEach(v => v.controls = true);
   });
 }
