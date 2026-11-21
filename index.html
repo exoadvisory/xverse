@@ -213,6 +213,7 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .qed .req{display:flex;align-items:center;gap:6px;margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);font-weight:600;white-space:nowrap}.qed .req input{width:18px;height:18px;min-height:0;padding:0;margin:0;accent-color:var(--ink)}
 .qed textarea{margin-top:8px}
 .evc .dt.o{background:linear-gradient(160deg,#7a5c66,#c4877f)}
+.evpast .evc{opacity:.55;filter:grayscale(.35)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 </style>
 </head>
@@ -700,7 +701,16 @@ function showTab(t) {
   S.tab = t;
   ["moments", "events"].forEach(x => { $("tab-" + x).hidden = x !== t; });
   document.querySelectorAll("nav.tabs button[data-tab]").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
-  if (t === "events") { try { localStorage.setItem("xv-evseen", String(Date.now())); } catch (e) {} renderEvents(); }
+  if (t === "events") {
+    try { localStorage.setItem("xv-evseen", String(Date.now())); } catch (e) {}
+    renderEvents(); evDot();
+    const a = $("evNow"), pad = $("evPad");                 // open at "now"; scroll up for past events
+    if (a && a.previousElementSibling) {
+      const y = a.getBoundingClientRect().top + window.scrollY - 8;
+      pad.style.height = Math.max(0, window.innerHeight - (document.documentElement.scrollHeight - y)) + "px";   // room to scroll "now" to the top
+      return window.scrollTo(0, y);
+    }
+  }
   evDot();
   window.scrollTo(0, 0);
 }
@@ -731,13 +741,14 @@ function renderEvents() {
   const past = evs.filter(e => ms(e.end || e.start) < now - 12 * 3600e3 && shown(e)).reverse();
   const hidden = core ? live.filter(e => e.see === "hidden" && ms(e.end || e.start || e.deadline) >= now - 12 * 3600e3) : [];
   const cancelled = core ? S.events.filter(e => e.status === "cancelled") : [];
-  let h = `<div class="evhead"><h2>Events</h2>${core ? `<span><button class="btn ghost" data-ordnew style="padding:9px 12px">+ Order</button> <button class="btn rose" data-evnew style="padding:9px 14px">+ Event</button></span>` : ""}</div>`;
+  // like a calendar: past events above (greyed, oldest first), and the page opens at the next upcoming one
+  let h = past.length ? `<div class="evsec">Past</div><div class="evpast">${past.slice().reverse().map(evCard).join("")}</div>` : "";
+  h += `<div id="evNow"></div><div class="evhead"><h2>Events</h2>${core ? `<span><button class="btn ghost" data-ordnew style="padding:9px 12px">+ Order</button> <button class="btn rose" data-evnew style="padding:9px 14px">+ Event</button></span>` : ""}</div>`;
   if (orders.length) h += `<div class="evsec">Orders</div>` + orders.map(evCard).join("");
   h += up.length ? `<div class="evsec">Upcoming</div>` + up.map(evCard).join("") : `<div class="card"><p>No upcoming events right now.</p></div>`;
   if (hidden.length) h += `<details class="more2"><summary>From the calendar, not shown to FCs · ${hidden.length} ›</summary>${hidden.map(evCard).join("")}</details>`;
-  if (past.length) h += `<details class="more2"><summary>Past events · ${past.length} ›</summary>${past.map(evCard).join("")}</details>`;
   if (cancelled.length) h += `<details class="more2"><summary>Cancelled · ${cancelled.length} ›</summary>${cancelled.map(evCard).join("")}</details>`;
-  $("evList").innerHTML = h;
+  $("evList").innerHTML = h + `<div id="evPad"></div>`;
 }
 // Add to my calendar: a calendar file the phone opens in its own calendar app
 function icsFor(e) {
