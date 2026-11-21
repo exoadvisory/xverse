@@ -169,6 +169,9 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .evcover h2{margin:6px 0 2px;font-size:22px}.evcover p{margin:0;opacity:.9;font-size:14px}
 .evback{position:absolute;top:calc(10px + env(safe-area-inset-top));left:10px;border:0;background:rgba(0,0,0,.25);color:#fff;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .evbody{max-width:640px;margin:0 auto;padding:14px}
+.evbody .card{margin-bottom:14px;padding:16px}
+.evbody .card>b:first-child{display:block;font-size:15px;margin-bottom:2px}
+.fm label{margin-top:14px}
 .evtag{display:inline-block;background:#f3e6e2;color:var(--rose2);border-radius:999px;padding:4px 10px;font-size:12.5px;font-weight:700}
 .calbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;font-weight:700;margin-top:12px;cursor:pointer;font-size:14px}
 .egrid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:8px}
@@ -772,7 +775,7 @@ function openBuilder(e) {
   const isNew = !e;
   const f = e ? Object.assign({}, e, { groups: (e.groups || []).slice(), people: (e.people || []).slice() })
     : { title: "", start: new Date(Date.now() + 7 * 864e5).toISOString(), end: "", allDay: false, venue: "", note: "", see: "groups", groups: ["core", "xcademy"], people: [], album: true, tag: "", cal: true };
-  let date = sgDateStr(f.start), t1 = f.allDay ? "10:00" : sgTimeStr(f.start), t2 = f.allDay || !f.end ? "" : sgTimeStr(f.end);
+  let date = sgDateStr(f.start), t1 = f.allDay || isNew ? "10:00" : sgTimeStr(f.start), t2 = f.allDay || !f.end ? "" : sgTimeStr(f.end);
   let tagTouched = !!f.tag, calOn = isNew ? true : !!f.cal;
   const P = $("evPage");
   const draw = err => {
