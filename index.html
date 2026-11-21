@@ -191,6 +191,28 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .ferr{color:var(--bad);font-size:13px;margin-top:6px}
 .plist label{display:flex;justify-content:space-between;align-items:center;margin:0;padding:9px 12px;border-bottom:1px solid #f1ece4;font-size:15px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:400}
 .plist label input{width:20px;height:20px;flex:none;accent-color:var(--ink)}
+.seg2.big{margin-top:6px}.seg2.big button{flex:1;padding:12px;font-size:15px}
+.qcard .opt{display:flex;justify-content:space-between;align-items:center;width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px 12px;margin-top:6px;font:inherit;font-size:15px;cursor:pointer;text-align:left;color:var(--ink)}
+.qcard .opt small{color:var(--muted)}.qcard .opt i{width:18px;height:18px;border-radius:50%;border:1.5px solid #c9c1b6;flex:none}.qcard .opt.m i{border-radius:5px}
+.qcard .opt.on{box-shadow:0 0 0 2px var(--ink) inset}.qcard .opt.on i{background:var(--ink);border-color:var(--ink)}
+.qcard .qty{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1ece4;font-size:15px}.qcard .qty small{color:var(--muted)}
+.qcard .st{display:flex;align-items:center;gap:10px}.qcard .st button{width:34px;height:34px;border-radius:10px;border:0;background:#f3ede2;font-size:18px;font-weight:700;cursor:pointer;color:var(--ink)}
+.qcard .st button:disabled{opacity:.4}.qcard .st b{min-width:20px;text-align:center}
+.qcard textarea,.qcard input{margin-top:8px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.tiles button{border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;cursor:pointer;font:inherit;color:inherit}.tiles button b{display:block;font-size:24px}.tiles button span{font-size:12.5px;color:var(--muted)}
+.tiles button.on{background:var(--ink);color:#fff;border-color:var(--ink)}.tiles button.on span{color:#d9d3ca}.tiles button:disabled{cursor:default}
+.rrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1ece4;font-size:14.5px}.rrow:last-child{border:0}.rrow small{color:var(--muted)}
+.qed{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px;background:#fff}
+.qed .row2{display:flex;gap:8px;align-items:center;margin-top:8px}.qed .row2 select{flex:1}
+.qed .rm{border:0;background:none;color:var(--bad);font-weight:700;cursor:pointer;font-size:13px}
+.pick{position:relative;display:flex;align-items:center;min-height:46px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:16px;color:var(--ink);overflow:hidden}
+.pick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;border:0;padding:0;min-width:0;-webkit-appearance:none;appearance:none}
+.fm .two>div{min-width:0}
+.seg2 button.on::before,.tiles button.on::before{content:"\2713  ";font-weight:800}
+.qed .req{display:flex;align-items:center;gap:6px;margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);font-weight:600;white-space:nowrap}.qed .req input{width:18px;height:18px;min-height:0;padding:0;margin:0;accent-color:var(--ink)}
+.qed textarea{margin-top:8px}
+.evc .dt.o{background:linear-gradient(160deg,#7a5c66,#c4877f)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 </style>
 </head>
@@ -278,6 +300,7 @@ const ICON = {
   photo: `<svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/></svg>`
 };
 function toast(msg) {
+  document.querySelectorAll(".toast").forEach(x => x.remove());
   const t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
   document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
 }
@@ -681,26 +704,35 @@ function showTab(t) {
   evDot();
   window.scrollTo(0, 0);
 }
+const EN_PLACES = [[/新加坡/g, "Singapore"], [/马来西亚|馬來西亞/g, "Malaysia"], [/中国|中國/g, "China"], [/香港/g, "Hong Kong"], [/台湾|臺灣|台灣/g, "Taiwan"]];
+const enPlace = s => EN_PLACES.reduce((t, [re, w]) => t.replace(re, w), String(s || ""));
 function evCard(e) {
-  const p = sgParts(e.start), core = S.me && S.me.core;
+  const p = sgParts(e.kind === "order" ? e.deadline : e.start), core = S.me && S.me.core, m = e.mine;
   const badges = (e.invited ? `<span class="bdg">You're invited</span>` : "")
+    + (m && m.status === "going" ? `<span class="bdg">Going ✓</span>` : m && m.status === "not" ? `<span class="bdg g">Not going</span>` : m && m.status === "ordered" ? `<span class="bdg">Ordered ✓</span>` : "")
+    + (!m && e.act === "rsvp" && !e.closed ? `<span class="bdg">RSVP by ${(q => q.d + " " + MON[q.m])(sgParts(e.deadline))}</span>` : "")
+    + (e.closed && e.act !== "fyi" ? `<span class="bdg g">Closed</span>` : "")
     + (core && e.see === "hidden" ? `<span class="bdg g">Hidden</span>` : "")
     + (core && e.see === "invitees" ? `<span class="bdg g">Invitees · ${e.people.length}</span>` : "")
-    + (core && e.see === "groups" ? `<span class="bdg g">${e.groups.map(g => g[0].toUpperCase() + g.slice(1)).join(" · ")}</span>` : "")
+    + (core && e.see === "groups" ? `<span class="bdg g">${e.groups.map(g => g === "candidate" ? "Candidates" : g[0].toUpperCase() + g.slice(1)).join(" · ")}</span>` : "")
     + (e.status === "cancelled" ? `<span class="bdg x">Cancelled</span>` : "")
     + (e.photos ? `<span class="bdg g">${e.photos} photo${e.photos > 1 ? "s" : ""}</span>` : "");
-  return `<button class="evc" data-ev="${esc(e.id)}"><span class="dt"><b>${p.d}</b><small>${MON[p.m]}</small></span>
-    <span class="tx"><b>${esc(e.title)}</b><small>${esc(whenText(e).replace(/^\w+ \d+ \w+ \d+ · /, ""))}${e.venue ? " · " + esc(e.venue) : ""}</small><br>${badges}</span></button>`;
+  const sub = e.kind === "order" ? `Team order · closes ${closesText(e)}` : whenText(e).replace(/^\w+ \d+ \w+ \d+ · /, "") + (e.venue ? " · " + enPlace(e.venue) : "");
+  return `<button class="evc" data-ev="${esc(e.id)}"><span class="dt${e.kind === "order" ? " o" : ""}"><b>${p.d}</b><small>${MON[p.m]}</small></span>
+    <span class="tx"><b>${esc(e.title)}</b><small>${esc(sub)}</small><br>${badges}</span></button>`;
 }
 function renderEvents() {
   const core = S.me && S.me.core, now = Date.now();
   const live = S.events.filter(e => e.status !== "cancelled");
   const shown = e => !core || e.see !== "hidden";
-  const up = live.filter(e => ms(e.end || e.start) >= now - 12 * 3600e3 && shown(e));
-  const past = live.filter(e => ms(e.end || e.start) < now - 12 * 3600e3 && shown(e)).reverse();
-  const hidden = core ? live.filter(e => e.see === "hidden" && ms(e.end || e.start) >= now - 12 * 3600e3) : [];
+  const orders = live.filter(e => e.kind === "order" && shown(e) && (!e.closed || ms(e.deadline) > now - 7 * 864e5));
+  const evs = live.filter(e => e.kind !== "order");
+  const up = evs.filter(e => ms(e.end || e.start) >= now - 12 * 3600e3 && shown(e));
+  const past = evs.filter(e => ms(e.end || e.start) < now - 12 * 3600e3 && shown(e)).reverse();
+  const hidden = core ? live.filter(e => e.see === "hidden" && ms(e.end || e.start || e.deadline) >= now - 12 * 3600e3) : [];
   const cancelled = core ? S.events.filter(e => e.status === "cancelled") : [];
-  let h = `<div class="evhead"><h2>Events</h2>${core ? `<button class="btn rose" data-evnew style="padding:9px 14px">+ New event</button>` : ""}</div>`;
+  let h = `<div class="evhead"><h2>Events</h2>${core ? `<span><button class="btn ghost" data-ordnew style="padding:9px 12px">+ Order</button> <button class="btn rose" data-evnew style="padding:9px 14px">+ Event</button></span>` : ""}</div>`;
+  if (orders.length) h += `<div class="evsec">Orders</div>` + orders.map(evCard).join("");
   h += up.length ? `<div class="evsec">Upcoming</div>` + up.map(evCard).join("") : `<div class="card"><p>No upcoming events right now.</p></div>`;
   if (hidden.length) h += `<details class="more2"><summary>From the calendar, not shown to FCs · ${hidden.length} ›</summary>${hidden.map(evCard).join("")}</details>`;
   if (past.length) h += `<details class="more2"><summary>Past events · ${past.length} ›</summary>${past.map(evCard).join("")}</details>`;
@@ -714,37 +746,47 @@ function icsFor(e) {
   const escI = t => String(t || "").replace(/[\\,;]/g, m => "\\" + m).replace(/\n/g, "\\n");
   const when = e.allDay ? `DTSTART;VALUE=DATE:${day(e.start)}\r\nDTEND;VALUE=DATE:${day(new Date(ms(e.start) + 864e5).toISOString())}` : `DTSTART:${f(e.start)}\r\nDTEND:${f(e.end || e.start)}`;
   return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Xverse//EXO//EN", "BEGIN:VEVENT", `UID:${e.id}@xverse`, `DTSTAMP:${f(new Date().toISOString())}`, when,
-    `SUMMARY:${escI(e.title)}`, e.venue ? `LOCATION:${escI(e.venue)}` : "", e.note ? `DESCRIPTION:${escI(e.note)}` : "", "END:VEVENT", "END:VCALENDAR"].filter(Boolean).join("\r\n");
+    `SUMMARY:${escI(e.title)}`, e.venue ? `LOCATION:${escI(enPlace(e.venue))}` : "", e.note ? `DESCRIPTION:${escI(e.note)}` : "", "END:VEVENT", "END:VCALENDAR"].filter(Boolean).join("\r\n");
 }
 function addToCalendar(e) {
   const blob = new Blob([icsFor(e)], { type: "text/calendar" }), url = URL.createObjectURL(blob);
   const a = document.createElement("a"); a.href = url; a.download = (e.tag || "event") + ".ics"; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-function closeEvent() { $("evPage").hidden = true; $("evPage").innerHTML = ""; document.body.style.overflow = ""; }
+function closeEvent() { unwireRespond(); $("evPage").hidden = true; $("evPage").innerHTML = ""; document.body.style.overflow = ""; }
 function openEvent(id) {
   const e = S.events.find(x => x.id === id); if (!e) return;
-  const core = S.me && S.me.core;
+  unwireRespond();
+  const core = S.me && S.me.core, order = e.kind === "order";
   const photos = (S.items || []).filter(x => x.ev === id);
-  const badge = e.status === "cancelled" ? "Cancelled" : e.invited ? "You're invited" : core && e.see === "hidden" ? "Hidden from FCs" : "";
+  const badge = e.status === "cancelled" ? "Cancelled" : e.invited ? "You're invited" : core && e.see === "hidden" ? "Hidden from FCs"
+    : e.act === "rsvp" && !e.closed ? "RSVP by " + closesText(e) : order ? (e.closed ? "Orders closed" : "Closes " + closesText(e)) : "";
+  const rb = e.act === "rsvp" || order ? respondBlock(e) : null;
   const P = $("evPage");
-  P.innerHTML = `<div class="evcover"><button class="evback" data-evclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
-    ${badge ? `<span class="bdg">${esc(badge)}</span>` : ""}<h2>${esc(e.title)}</h2><p>${esc(whenText(e))}${e.venue ? " · " + esc(e.venue) : ""}</p></div>
+  const page = () => `<div class="evcover"><button class="evback" data-evclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    ${badge ? `<span class="bdg">${esc(badge)}</span>` : ""}<h2>${esc(e.title)}</h2><p>${order ? "Team order" + (e.max ? " · max " + e.max + " per person" : "") : esc(whenText(e)) + (e.venue ? " · " + esc(enPlace(e.venue)) : "")}</p></div>
     <div class="evbody">
-      <div class="card" style="text-align:left">${e.tag ? `<span class="evtag">#${esc(e.tag)}</span>` : ""}
+      ${e.tag || e.note || !order ? `<div class="card" style="text-align:left">${e.tag ? `<span class="evtag">#${esc(e.tag)}</span>` : ""}
         ${e.note ? `<p style="white-space:pre-wrap;color:var(--ink);font-size:14px;margin:10px 0 0">${esc(e.note)}</p>` : ""}
-        <button class="calbtn" data-evics><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>Add to my calendar</button></div>
+        ${order ? "" : `<button class="calbtn" data-evics><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>Add to my calendar</button>`}</div>` : ""}
+      ${rb ? `<div id="rsArea">${rb.html()}</div>` : ""}
+      ${order && e.mine && e.mine.status === "ordered" && !e.closed ? `<p style="text-align:center;margin:0 0 14px"><button class="linkbtn" data-rwithdraw style="color:var(--bad)">Withdraw my order</button></p>` : ""}
       ${e.album ? `<div class="card" style="text-align:left"><div style="display:flex;justify-content:space-between"><b>Event album · ${photos.length}</b>${photos.length ? `<button class="linkbtn" data-evf="${esc(id)}">See all ›</button>` : ""}</div>
-        ${photos.length ? `<div class="egrid">${photos.slice(0, 8).map(x => `<button data-evph="${esc(x.id)}"><img alt=""></button>`).join("")}</div>` : `<p style="margin:8px 0 0">No photos yet.</p>`}</div>` : ""}
-      ${core ? `<div class="card" style="text-align:left"><b>Core team</b><p style="margin:6px 0 0">${e.cal ? "Linked with the EXO Calendar of Events." : "Not in the EXO Calendar of Events."}${e.recurring ? " Repeating entry: edit its date in the calendar." : ""}</p>
-        <div class="btns" style="justify-content:flex-start"><button class="btn ghost" data-evedit>Edit</button>${e.status === "cancelled" ? `<button class="btn ghost" data-evundo>Restore</button>` : `<button class="btn ghost" data-evcancel style="color:var(--bad)">Cancel this event</button>`}</div></div>` : ""}
+        ${photos.length ? `<div class="egrid">${photos.slice(0, 8).map(x => `<button data-evph="${esc(x.id)}"><img alt=""></button>`).join("")}</div>` : `<p style="margin:8px 0 0">No photos yet.</p>`}
+        ${e.canUpload && e.status !== "cancelled" && rb ? `<button class="calbtn" data-evadd>Add photos to this event</button>` : ""}</div>` : ""}
+      ${core ? `<div class="card" style="text-align:left"><b>Core team</b><p style="margin:6px 0 0">${order ? "Orders aren't added to the calendar." : e.cal ? "Linked with the EXO Calendar of Events." : "Not in the EXO Calendar of Events."}${e.recurring ? " Repeating entry: edit its date in the calendar." : ""}</p>
+        <div class="btns" style="justify-content:flex-start">${e.act !== "fyi" ? `<button class="btn rose" data-evres>Results</button>` : ""}<button class="btn ghost" data-evedit>Edit</button>${e.status === "cancelled" ? `<button class="btn ghost" data-evundo>Restore</button>` : `<button class="btn ghost" data-evcancel style="color:var(--bad)">Cancel</button>`}</div></div>` : ""}
     </div>
-    ${e.canUpload && e.album && e.status !== "cancelled" ? `<div class="evbar"><button class="btn rose" data-evadd>Add photos to this event</button></div>` : ""}`;
+    ${rb ? respondBar(e, rb.st) : e.canUpload && e.album && e.status !== "cancelled" ? `<div class="evbar"><button class="btn rose" data-evadd>Add photos to this event</button></div>` : ""}`;
+  P.innerHTML = page();
   P.hidden = false; P.scrollTop = 0; document.body.style.overflow = "hidden";
-  P.querySelectorAll("[data-evph]").forEach(b => {
+  const thumbsIn = () => P.querySelectorAll("[data-evph]").forEach(b => {
     const pid = b.dataset.evph, img = b.querySelector("img"), u = TH[pid + "|400"];
     if (u) setImg(img, u); else getThumbs([pid], 400).then(() => TH[pid + "|400"] && setImg(img, TH[pid + "|400"]));
   });
+  thumbsIn();
+  // keep the page fresh but don't jump: only the answer area and the bottom bar redraw
+  const redraw = () => { const A = $("rsArea"); if (A) A.innerHTML = rb.html(); const bar = P.querySelector(".evbar"); if (bar) bar.outerHTML = respondBar(e, rb.st); else if (rb) P.insertAdjacentHTML("beforeend", respondBar(e, rb.st)); };
   P.onclick = ev => {
     const b = ev.target.closest("button"); if (!b) return;
     if (b.dataset.evclose !== undefined) return closeEvent();
@@ -752,13 +794,15 @@ function openEvent(id) {
     if (b.dataset.evadd !== undefined) { UP.preset = id; return $("pick").click(); }
     if (b.dataset.evph) { closeEvent(); S.filter = { k: "event", v: id }; showTab("moments"); render(); const i = filtered().findIndex(x => x.id === b.dataset.evph); return openViewer(Math.max(0, i)); }
     if (b.dataset.evedit !== undefined) return openBuilder(e);
+    if (b.dataset.evres !== undefined) return openResults(e);
     if (b.dataset.evcancel !== undefined || b.dataset.evundo !== undefined) {
       const undo = b.dataset.evundo !== undefined;
-      if (!undo && !confirm("Cancel this event? FCs won't see it any more. Photos and the calendar entry are kept.")) return;
+      if (!undo && !confirm("Cancel this? FCs won't see it any more. Photos, answers and the calendar entry are kept.")) return;
       call("eventcancel", { id, undo }).then(r => { if (!r.ok) throw 0; e.status = undo ? "active" : "cancelled"; saveItems(); openEvent(id); renderEvents(); toast(undo ? "Restored" : "Cancelled"); })
         .catch(() => toast("Couldn't save. Try again"));
     }
   };
+  if (rb) wireRespond(e, rb, redraw);
 }
 // Suggested tag: words joined (Nov Anniversary Lunch → NovAnniversaryLunch) + the year; + the month if the title has none
 function suggestTag(title, dateStr) {
@@ -766,83 +810,148 @@ function suggestTag(title, dateStr) {
   let t = words.map(w => /^[A-Z0-9]+$/.test(w) ? w : w[0].toUpperCase() + w.slice(1)).join("");
   const d = dateStr ? new Date(dateStr + "T12:00:00+08:00") : new Date();
   const y = String(d.getFullYear()), mon = MON[d.getMonth()];
-  const hasMonth = MON.some(m => new RegExp("^" + m, "i").test(t) || words.some(w => w.toLowerCase().startsWith(m.toLowerCase())));
+  const hasMonth = words.some(w => MON.some(m => w.toLowerCase().startsWith(m.toLowerCase())));
   if (!/(19|20)\d\d/.test(t)) t += y + (hasMonth ? "" : mon);
   return t.slice(0, 40);
 }
 const sgDateStr = iso => { const p = sgParts(iso); return `${p.y}-${pad2(p.m + 1)}-${pad2(p.d)}`; };
 const sgTimeStr = iso => { const p = sgParts(iso); return `${pad2(p.hh)}:${pad2(p.mm)}`; };
-function openBuilder(e) {
-  const isNew = !e;
-  const f = e ? Object.assign({}, e, { groups: (e.groups || []).slice(), people: (e.people || []).slice() })
-    : { title: "", start: new Date(Date.now() + 7 * 864e5).toISOString(), end: "", allDay: false, venue: "", note: "", see: "groups", groups: ["core", "xcademy"], people: [], album: true, tag: "", cal: true };
-  let date = sgDateStr(f.start), t1 = f.allDay || isNew ? "10:00" : sgTimeStr(f.start), t2 = f.allDay || !f.end ? "" : sgTimeStr(f.end);
-  let tagTouched = !!f.tag, calOn = isNew ? true : !!f.cal;
+// Date / time boxes that always read in English (the phone's own picker still opens on tap)
+const dateLbl = ymd => { if (!ymd) return "Pick a date"; const d = new Date(ymd + "T12:00:00+08:00"), p = sgParts(d.toISOString()); return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][p.wd]} ${p.d} ${MON[p.m]} ${p.y}`; };
+const timeLbl = hm => { if (!hm) return "Add time"; const [h, m] = hm.split(":").map(Number); return fmtTime({ hh: h, mm: m }); };
+const pick = (id, type, val) => `<div class="pick"><span id="${id}L">${esc(type === "date" ? dateLbl(val) : timeLbl(val))}</span><input id="${id}" type="${type}" value="${esc(val || "")}"></div>`;
+function wirePicks(root) {
+  root.querySelectorAll(".pick input").forEach(i => i.addEventListener("input", () => { const l = root.querySelector("#" + i.id + "L"); if (l) l.textContent = i.type === "date" ? dateLbl(i.value) : timeLbl(i.value); }));
+}
+function openBuilder(e, kindNew) {
+  unwireRespond();
+  const isNew = !e, order = e ? e.kind === "order" : kindNew === "order";
+  const wk = new Date(Date.now() + 7 * 864e5).toISOString();
+  const f = e ? Object.assign({}, e, { groups: (e.groups || []).slice(), people: (e.people || []).slice(), form: JSON.parse(JSON.stringify(e.form || [])), pay: e.pay ? Object.assign({}, e.pay) : { on: false, amount: 0, details: "" } })
+    : { title: "", start: wk, end: "", allDay: false, venue: "", note: "", see: "groups", groups: ["core", "xcademy"], people: [], album: !order, tag: "", cal: !order,
+        act: order ? "order" : "fyi", kind: order ? "order" : "event", form: order ? [{ id: "q0", type: "items", label: "Items", required: false, options: [] }] : [], deadline: "", pay: { on: false, amount: 0, details: "" }, max: 0, finexisClose: "" };
+  let date = sgDateStr(f.start), t1 = f.allDay || isNew ? "10:00" : sgTimeStr(f.start), t2 = f.allDay || !f.end || isNew ? "" : sgTimeStr(f.end);
+  let dlD = f.deadline ? sgDateStr(f.deadline) : "", dlT = f.deadline ? sgTimeStr(f.deadline) : "23:59", finD = f.finexisClose ? sgDateStr(f.finexisClose) : "";
+  let tabName = f.tab ? f.tab.name : "";
+  let tagTouched = !!f.tag, calOn = isNew ? !order : !!f.cal;
   const P = $("evPage");
+  const qEditor = () => (f.form || []).map((q, i) => `<div class="qed"><input data-ql="${i}" value="${esc(q.label)}" placeholder="Question, e.g. Dietary needs">
+      <div class="row2"><select data-qty="${i}">${Object.keys(QT_LABEL).map(k => `<option value="${k}"${q.type === k ? " selected" : ""}>${QT_LABEL[k]}</option>`).join("")}</select>
+      <label class="req"><input type="checkbox" data-qr="${i}"${q.required ? " checked" : ""}> Required</label><button class="rm" data-qrm="${i}">Remove</button></div>
+      ${["single", "multi", "items"].includes(q.type) ? `<textarea data-qo="${i}" placeholder="One per line. Add a price if needed, e.g.\nGrilled chicken $18\nSalmon $22">${esc(optText(q))}</textarea>` : ""}</div>`).join("");
   const draw = err => {
+    const rsvp = f.act === "rsvp" || order;
     P.innerHTML = `<div class="evcover" style="min-height:110px"><button class="evback" data-bclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
-      <h2>${isNew ? "New event" : "Set up event"}</h2>${f.cal && !isNew ? `<p>From the EXO Calendar of Events · edits sync both ways</p>` : ""}</div>
+      <h2>${isNew ? (order ? "New order" : "New event") : order ? "Edit order" : "Set up event"}</h2>${f.cal && !isNew && !order ? `<p>From the EXO Calendar of Events · edits sync both ways</p>` : ""}</div>
       <div class="evbody fm">
         <div class="card" style="text-align:left"><b>1 · Details</b>
-          <label>Title</label><input id="bT" value="${esc(f.title)}" maxlength="120">
-          <label>Date</label><input id="bD" type="date" value="${date}"${f.recurring ? " disabled" : ""}>
+          <label>Title</label><input id="bT" value="${esc(f.title)}" maxlength="120" placeholder="${order ? "e.g. Raya Green Packets 2027" : "e.g. Nov Anniversary Lunch"}">
+          ${order ? "" : `<label>Date</label>${f.recurring ? `<div class="pick"><span>${esc(dateLbl(date))}</span></div>` : pick("bD", "date", date)}
           <div class="swr"><span>All day</span><button class="sw${f.allDay ? " on" : ""}" data-bsw="allDay"></button></div>
-          ${f.allDay ? "" : `<div class="two"><div><label>Starts</label><input id="bS" type="time" value="${t1}"></div><div><label>Ends</label><input id="bE" type="time" value="${t2}"></div></div>`}
-          <label>Venue</label><input id="bV" value="${esc(f.venue)}" maxlength="200">
+          ${f.allDay ? "" : `<div class="two"><div><label>Starts</label>${pick("bS", "time", t1)}</div><div><label>Ends</label>${pick("bE", "time", t2)}</div></div>`}
+          <label>Venue</label><input id="bV" value="${esc(enPlace(f.venue))}" maxlength="200">`}
           <label>Note</label><textarea id="bN" maxlength="1000">${esc(f.note)}</textarea></div>
-        <div class="card" style="text-align:left"><b>2 · Who can see it</b><div class="seg2" style="margin-top:8px">
-            ${["hidden", "groups", "invitees"].map(k => `<button data-bsee="${k}" class="${f.see === k ? "on" : ""}">${{ hidden: "Hidden", groups: "Groups", invitees: "Invitees" }[k]}</button>`).join("")}</div>
+        <div class="card" style="text-align:left"><b>2 · ${order ? "Who can order" : "Who can see it"}</b><div class="seg2" style="margin-top:8px">
+            ${(order ? ["groups", "invitees"] : ["hidden", "groups", "invitees"]).map(k => `<button data-bsee="${k}" class="${f.see === k ? "on" : ""}">${{ hidden: "Hidden", groups: "Groups", invitees: "Invitees" }[k]}</button>`).join("")}</div>
           ${f.see === "groups" ? `<div class="seg2" style="margin-top:10px">${[["core", "Core"], ["xcademy", "Xcademy"], ["candidate", "Candidates"]].map(([k, l]) => `<button data-bgrp="${k}" class="${f.groups.includes(k) ? "on" : ""}">${l}</button>`).join("")}</div>` : ""}
           ${f.see === "invitees" ? `<div class="swr"><span>${f.people.length} ${f.people.length === 1 ? "person" : "people"} selected</span><button class="linkbtn" data-binv>Edit ›</button></div>` : ""}
           ${f.see === "hidden" ? `<p style="margin:8px 0 0">Only the core team sees it.</p>` : ""}</div>
-        <div class="card" style="text-align:left"><b>3 · What people do</b><div class="seg2" style="margin-top:8px"><button class="on">FYI</button><button disabled>RSVP · soon</button></div></div>
-        <div class="card" style="text-align:left"><b>4 · Album</b>
+        <div class="card" style="text-align:left"><b>3 · ${order ? "Order form" : "What people do"}</b>
+          ${order ? "" : `<div class="seg2" style="margin-top:8px"><button data-bact="fyi" class="${f.act === "fyi" ? "on" : ""}">FYI</button><button data-bact="rsvp" class="${f.act === "rsvp" ? "on" : ""}">RSVP</button></div>`}
+          ${rsvp ? `<label>${order ? "Team order closes" : "RSVP closes"}</label><div class="two"><div>${pick("dlDate", "date", dlD)}</div><div>${pick("dlTime", "time", dlT)}</div></div>
+            <label>${order ? "Order items & questions" : "Extra questions (shown after “Going”)"}</label>${qEditor()}<button class="calbtn" data-qadd>+ Add question</button>
+            ${order || (f.form || []).some(q => q.type === "items") ? `<label>Max quantity per person (optional)</label><input id="bMax" type="number" inputmode="numeric" min="0" value="${f.max || ""}" placeholder="No limit">` : ""}
+            <div class="swr" style="margin-top:10px"><span>Payment proof</span><button class="sw${f.pay.on ? " on" : ""}" data-bsw="pay"></button></div>
+            ${f.pay.on ? `${order ? "" : `<label>Amount per person ($, besides any priced choices)</label><input id="bAmt" type="number" inputmode="decimal" min="0" step="0.01" value="${f.pay.amount || ""}">`}
+              <label>How to pay</label><input id="bPay" value="${esc(f.pay.details || "")}" maxlength="300" placeholder="e.g. PayNow to 9123 4567 (EXO)">
+              ${order ? `<label>finexis order closes (screenshots are deleted the day after)</label>${pick("finDate", "date", finD)}` : `<p style="margin:6px 0 0">Screenshots are deleted for good the day after the event.</p>`}` : ""}
+            <label>Tab in EXO Event Attendance Collation</label><input id="bTab" value="${esc(tabName)}" placeholder="${esc(defaultTab())}" maxlength="90">` : ""}</div>
+        ${order ? "" : `<div class="card" style="text-align:left"><b>4 · Album</b>
           <div class="swr"><span>Event album</span><button class="sw${f.album ? " on" : ""}" data-bsw="album"></button></div>
-          ${f.album ? `<p style="margin:0">${f.see === "invitees" ? "The invitees and the core team can add photos." : f.see === "groups" ? "Everyone in those groups can add photos." : "Only the core team can add photos."} Everyone can view them.</p>` : ""}
-          <label>Tag (must include the year)</label><input id="bTag" value="${esc(f.tag)}" placeholder="e.g. NovAnniversaryLunch2026" autocapitalize="none">
-          ${err ? `<div class="ferr">${esc(err)}</div>` : ""}</div>
-        <div class="card" style="text-align:left"><div class="swr"><span>Show in EXO Calendar of Events</span>${!isNew && e.cal ? `<span class="muted" style="font-size:13px">Linked</span>` : `<button class="sw${calOn ? " on" : ""}" data-bsw="cal"></button>`}</div></div>
+          ${f.album ? `<p style="margin:0">${f.see === "invitees" ? "The invitees and the core team can add photos." : f.see === "groups" ? (f.act === "rsvp" ? "Everyone in those groups can add photos." : "Everyone in those groups can add photos.") : "Only the core team can add photos."} Everyone can view them.</p>` : ""}
+          <label>Tag (must include the year)</label><input id="bTag" value="${esc(f.tag)}" placeholder="e.g. NovAnniversaryLunch2026" autocapitalize="none"></div>
+        <div class="card" style="text-align:left"><div class="swr"><span>Show in EXO Calendar of Events</span>${!isNew && e.cal ? `<span class="muted" style="font-size:13px">Linked</span>` : `<button class="sw${calOn ? " on" : ""}" data-bsw="cal"></button>`}</div></div>`}
+        ${err ? `<div class="card ferr" style="text-align:left">${esc(err)}</div>` : ""}
       </div>
-      <div class="evbar"><button class="btn rose" data-bsave>${isNew ? "Save event" : "Save changes"}</button></div>`;
+      <div class="evbar"><button class="btn rose" data-bsave>${isNew ? (order ? "Save order" : "Save event") : "Save changes"}</button></div>`;
     P.hidden = false; document.body.style.overflow = "hidden";
+    wirePicks(P);
     const T = $("bT"), TG = $("bTag");
-    T.oninput = () => { f.title = T.value; if (!tagTouched) TG.value = f.tag = f.title ? suggestTag(f.title, $("bD").value) : ""; };
-    $("bD").onchange = () => { date = $("bD").value; if (!tagTouched && f.title) TG.value = f.tag = suggestTag(f.title, date); };
-    TG.oninput = () => { tagTouched = true; f.tag = TG.value.replace(/[^A-Za-z0-9]/g, ""); };
-    if (!f.tag && f.title) TG.value = f.tag = suggestTag(f.title, date);
+    if (TG) {
+      const dIn = () => ($("bD") ? $("bD").value : date);
+      T.oninput = () => { f.title = T.value; if (!tagTouched) TG.value = f.tag = f.title ? suggestTag(f.title, dIn()) : ""; };
+      if ($("bD")) $("bD").addEventListener("change", () => { date = $("bD").value; if (!tagTouched && f.title) TG.value = f.tag = suggestTag(f.title, date); });
+      TG.oninput = () => { tagTouched = true; f.tag = TG.value.replace(/[^A-Za-z0-9]/g, ""); };
+      if (!f.tag && f.title) TG.value = f.tag = suggestTag(f.title, date);
+    }
+    if (err) { const x = P.querySelector(".ferr"); if (x) x.scrollIntoView({ block: "center" }); }
   };
+  const defaultTab = () => { const d = order ? (dlD || sgDateStr(new Date().toISOString())) : date; const p = new Date(d + "T12:00:00+08:00"); return `${MON[p.getMonth()]} ${String(p.getFullYear()).slice(2)} ${f.title || (order ? "Order" : "Event")}`; };
   const grab = () => {
-    f.title = $("bT").value.trim(); date = $("bD").value; f.venue = $("bV").value.trim(); f.note = $("bN").value.trim(); f.tag = $("bTag").value.replace(/[^A-Za-z0-9]/g, "");
-    if (!f.allDay) { t1 = $("bS").value || "10:00"; t2 = $("bE").value; }
+    f.title = $("bT").value.trim(); f.note = $("bN").value.trim();
+    if ($("bD")) date = $("bD").value;
+    if ($("bV")) f.venue = $("bV").value.trim();
+    if ($("bTag")) f.tag = $("bTag").value.replace(/[^A-Za-z0-9]/g, "");
+    if ($("bS")) { t1 = $("bS").value || "10:00"; t2 = $("bE").value; }
+    if ($("dlDate")) { dlD = $("dlDate").value; dlT = $("dlTime").value || "23:59"; }
+    if ($("finDate")) finD = $("finDate").value;
+    if ($("bMax")) f.max = +$("bMax").value || 0;
+    if ($("bAmt")) f.pay.amount = +$("bAmt").value || 0;
+    if ($("bPay")) f.pay.details = $("bPay").value.trim();
+    if ($("bTab")) tabName = $("bTab").value.trim();
+    P.querySelectorAll("[data-ql]").forEach(x => { const q = f.form[+x.dataset.ql]; if (q) q.label = x.value.trim(); });
+    P.querySelectorAll("[data-qty]").forEach(x => { const q = f.form[+x.dataset.qty]; if (q) q.type = x.value; });
+    P.querySelectorAll("[data-qr]").forEach(x => { const q = f.form[+x.dataset.qr]; if (q) q.required = x.checked; });
+    P.querySelectorAll("[data-qo]").forEach(x => { const q = f.form[+x.dataset.qo]; if (q) q.options = parseOptions(x.value, q.options); });
   };
   draw();
+  P.onchange = ev => { if (ev.target.dataset.qty !== undefined) { grab(); draw(); } };
   P.onclick = ev => {
     const b = ev.target.closest("button"); if (!b) return;
     if (b.dataset.bclose !== undefined) return e ? openEvent(e.id) : closeEvent();
-    if (b.dataset.bsw) { grab(); if (b.dataset.bsw === "cal") calOn = !calOn; else f[b.dataset.bsw] = !f[b.dataset.bsw]; return draw(); }
-    if (b.dataset.bsee) { grab(); f.see = b.dataset.bsee; if (f.see === "invitees" && !f.people.length) return draw(), invitePicker(f, draw); return draw(); }
+    if (b.dataset.bsw) { grab(); if (b.dataset.bsw === "cal") calOn = !calOn; else if (b.dataset.bsw === "pay") f.pay.on = !f.pay.on; else f[b.dataset.bsw] = !f[b.dataset.bsw]; return draw(); }
+    if (b.dataset.bact) { grab(); f.act = b.dataset.bact; if (f.act === "rsvp" && !dlD) { const d = new Date(new Date(date + "T12:00:00+08:00").getTime() - 2 * 864e5); dlD = sgDateStr(d.toISOString()); } return draw(); }
+    if (b.dataset.bsee) {
+      grab(); f.see = b.dataset.bsee;
+      if (f.see === "groups" && !f.groups.length) f.groups = ["core", "xcademy"];              // Core + Xcademy by default
+      if (f.see === "invitees" && !f.people.length) return draw(), invitePicker(f, draw);
+      return draw();
+    }
     if (b.dataset.bgrp) { grab(); const g = b.dataset.bgrp; f.groups = f.groups.includes(g) ? f.groups.filter(x => x !== g) : f.groups.concat(g); return draw(); }
     if (b.dataset.binv !== undefined) { grab(); return invitePicker(f, draw); }
+    if (b.dataset.qadd !== undefined) { grab(); f.form.push({ id: "q" + Date.now().toString(36), type: order ? "single" : "single", label: "", required: false, options: [] }); return draw(); }
+    if (b.dataset.qrm !== undefined) { grab(); f.form.splice(+b.dataset.qrm, 1); return draw(); }
     if (b.dataset.bsave !== undefined) {
       grab();
+      const rsvp = f.act === "rsvp" || order;
+      f.form = (f.form || []).filter(q => q.label);
       if (!f.title) return draw("Please add a title.");
-      if (!date) return draw("Please pick a date.");
-      if ((f.album || f.tag) && !/(19|20)\d\d/.test(f.tag)) return draw("The tag needs the year, e.g. " + suggestTag(f.title, date) + ".");
-      if (f.see === "groups" && !f.groups.length) return draw("Pick at least one group, or choose Hidden.");
+      if (!order && !date) return draw("Please pick a date.");
+      if (!order && (f.album || f.tag) && !/(19|20)\d\d/.test(f.tag)) return draw("The tag needs the year, e.g. " + suggestTag(f.title, date) + ".");
+      if (f.see === "groups" && !f.groups.length) return draw("Pick at least one group" + (order ? "." : ", or choose Hidden."));
       if (f.see === "invitees" && !f.people.length) return draw("Pick the invitees first.");
-      const start = f.allDay ? `${date}T00:00:00+08:00` : `${date}T${t1}:00+08:00`;
-      const end = f.allDay ? start : `${date}T${t2 || t1}:00+08:00`;
-      b.disabled = true;
-      call("eventsave", { event: { id: e ? e.id : "", title: f.title, start, end, allDay: f.allDay, venue: f.venue, note: f.note, see: f.see, groups: f.groups, people: f.people, rule: f.rule || null, album: f.album, tag: f.tag, cal: calOn } })
+      if (rsvp && !dlD) return draw(order ? "Please set when the team order closes." : "Please set when the RSVP closes.");
+      const badQ = f.form.find(q => ["single", "multi", "items"].includes(q.type) && !q.options.length);
+      if (badQ) return draw(`"${badQ.label}" needs its choices (one per line).`);
+      if (order && !f.form.some(q => q.type === "items")) return draw("An order needs at least one “Items × quantity” question.");
+      if (order && f.pay.on && !finD) return draw("Please set when the finexis order closes, so screenshots can be cleared after.");
+      const deadline = rsvp ? `${dlD}T${dlT || "23:59"}:00+08:00` : "";
+      const start = order ? deadline : f.allDay ? `${date}T00:00:00+08:00` : `${date}T${t1}:00+08:00`;
+      const end = order ? deadline : f.allDay ? start : `${date}T${t2 || t1}:00+08:00`;
+      b.disabled = true; b.innerHTML = LOADING;
+      call("eventsave", { event: { id: e ? e.id : "", kind: order ? "order" : "event", act: order ? "order" : f.act, title: f.title, start, end, allDay: !order && f.allDay, venue: order ? "" : f.venue, note: f.note,
+        see: f.see, groups: f.groups, people: f.people, rule: f.rule || null, album: !order && f.album, tag: order ? "" : f.tag, cal: !order && calOn,
+        deadline, form: rsvp ? f.form : [], max: f.max || 0, pay: rsvp ? f.pay : { on: false }, finexisClose: order && finD ? `${finD}T23:59:00+08:00` : "", tabName } })
         .then(r => {
-          if (!r.ok) { b.disabled = false; return draw({ tag_year: "The tag needs the year.", tag_taken: "That tag is already used by another event. Please change it.", tag_missing: "Please add a tag for the album.", title: "Please add a title.", date: "Please pick a date." }[r.error] || "Couldn't save. Try again."); }
+          if (!r.ok) { return draw({ tag_year: "The tag needs the year.", tag_taken: "That tag is already used by another event. Please change it.", tag_missing: "Please add a tag for the album.", title: "Please add a title.", date: "Please pick a date.",
+            deadline: "Please set when it closes.", form: "Each choice question needs its choices.", finexis: "Please set when the finexis order closes." }[r.error] || "Couldn't save. Try again."); }
           const i = S.events.findIndex(x => x.id === r.event.id);
           const merged = Object.assign({}, i >= 0 ? S.events[i] : {}, r.event, { photos: i >= 0 ? S.events[i].photos : 0 });
           if (i >= 0) S.events[i] = merged; else S.events.push(merged);
           S.events.sort((a, c) => String(a.start).localeCompare(String(c.start)));
           if (r.event.tag) S.evLabels[r.event.id] = { t: r.event.title, tag: r.event.tag, at: r.event.start };
           saveItems(); renderEvents(); openEvent(r.event.id); toast("Saved");
-        }).catch(() => { b.disabled = false; draw("Couldn't reach Xverse. Try again."); });
+        }).catch(() => draw("Couldn't reach Xverse. Try again."));
     }
   };
 }
@@ -889,6 +998,189 @@ function tagSearch() {
     .concat(Object.keys(cnt).filter(t => t.includes(q)).map(t => ({ k: "tag", v: t, l: t, n: cnt[t] }))).slice(0, 20);
   H.innerHTML = hits.map(h => `<button data-hk="${h.k}" data-hv="${esc(h.v)}"><span>#${esc(h.l)}</span><small>${h.n}</small></button>`).join("") || `<p style="padding:10px;margin:0;color:var(--muted);font-size:14px">No tag matches</p>`;
   H.hidden = false;
+}
+
+/* ---------- RSVP · orders · results ---------- */
+const QT_LABEL = { single: "Single choice", multi: "Multiple choice", text: "Short answer", number: "Number", yesno: "Yes / No", items: "Items × quantity" };
+const money = n => "$" + (Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/, "");
+const closesText = e => { const p = sgParts(e.deadline); return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][p.wd]} ${p.d} ${MON[p.m]}, ${fmtTime(p)}`; };
+// "Grilled chicken $18" → { label: "Grilled chicken", price: 18 }
+function parseOptions(text, old) {
+  const ids = {}; (old || []).forEach(o => ids[o.label.toLowerCase()] = o.id);
+  let n = (old || []).length;
+  return String(text || "").split(/\n+/).map(l => l.trim()).filter(Boolean).map(l => {
+    const m = /^(.*?)\s*\$\s?(\d+(?:\.\d{1,2})?)\s*$/.exec(l);
+    const label = (m ? m[1] : l).trim(), price = m ? +m[2] : 0;
+    return { id: ids[label.toLowerCase()] || ("o" + (n++)), label, price };
+  }).filter(o => o.label);
+}
+const optText = q => (q.options || []).map(o => o.label + (o.price ? " $" + o.price : "")).join("\n");
+function liveTotal(e, a) {
+  let t = 0;
+  (e.form || []).forEach(q => {
+    const v = a[q.id];
+    if (q.type === "items") q.options.forEach(o => t += ((v || {})[o.id] || 0) * o.price);
+    else if (q.type === "single") { const o = q.options.find(o => o.id === v); if (o) t += o.price; }
+    else if (q.type === "multi") (v || []).forEach(id => { const o = q.options.find(o => o.id === id); if (o) t += o.price; });
+  });
+  if (e.act === "rsvp" && e.pay) t += e.pay.amount || 0;
+  return t;
+}
+function qHtml(q, a, locked) {
+  const v = a[q.id], dis = locked ? " disabled" : "";
+  const req = q.required ? ` <span style="color:var(--rose2)">*</span>` : "";
+  let body = "";
+  if (q.type === "single") body = q.options.map(o => `<button class="opt${v === o.id ? " on" : ""}" data-qs="${q.id}" data-o="${o.id}"${dis}><span>${esc(o.label)}${o.price ? ` <small>${money(o.price)}</small>` : ""}</span><i></i></button>`).join("");
+  else if (q.type === "multi") body = q.options.map(o => `<button class="opt m${(v || []).includes(o.id) ? " on" : ""}" data-qm="${q.id}" data-o="${o.id}"${dis}><span>${esc(o.label)}${o.price ? ` <small>${money(o.price)}</small>` : ""}</span><i></i></button>`).join("");
+  else if (q.type === "items") body = q.options.map(o => { const n = (v || {})[o.id] || 0; return `<div class="qty"><span>${esc(o.label)}${o.price ? ` <small>${money(o.price)}</small>` : ""}</span><span class="st">
+      <button data-qi="${q.id}" data-o="${o.id}" data-d="-1"${dis || (!n ? " disabled" : "")}>−</button><b>${n}</b><button data-qi="${q.id}" data-o="${o.id}" data-d="1"${dis}>+</button></span></div>`; }).join("");
+  else if (q.type === "yesno") body = `<div class="seg2">${["yes", "no"].map(k => `<button class="${v === k ? "on" : ""}" data-qy="${q.id}" data-v="${k}"${dis}>${k === "yes" ? "Yes" : "No"}</button>`).join("")}</div>`;
+  else if (q.type === "number") body = `<input type="number" inputmode="decimal" data-qn="${q.id}" value="${v === undefined ? "" : esc(v)}"${dis}>`;
+  else body = `<textarea data-qt="${q.id}" maxlength="300"${dis}>${esc(v || "")}</textarea>`;
+  return `<div class="card fm qcard" style="text-align:left"><b>${esc(q.label)}${req}</b>${body}</div>`;
+}
+// RSVP / order block inside an event page; returns html and wires the handlers
+function respondBlock(e) {
+  const order = e.kind === "order", st = { status: e.mine ? e.mine.status : "", a: JSON.parse(JSON.stringify((e.mine && e.mine.answers) || {})), file: null };
+  if (order && st.status === "withdrawn") st.status = "";
+  return { st, html: () => {
+    const locked = e.closed || e.status === "cancelled";
+    const showQ = order || st.status === "going";
+    let h = "";
+    if (!order) h += `<div class="card" style="text-align:left"><b>Are you coming?</b>${e.deadline ? `<p style="margin:2px 0 8px">${locked ? "RSVP closed" : "Reply by " + esc(closesText(e))}</p>` : ""}
+      <div class="seg2 big"><button class="${st.status === "going" ? "on" : ""}" data-rs="going"${locked ? " disabled" : ""}>Going</button><button class="${st.status === "not" ? "on" : ""}" data-rs="not"${locked ? " disabled" : ""}>Not going</button></div></div>`;
+    else h += `<div class="card" style="text-align:left"><b>${e.mine && e.mine.status === "ordered" ? "Your order" : "Place your order"}</b><p style="margin:2px 0 0">${locked ? "Orders closed" : "Closes " + esc(closesText(e))}${e.max ? ` · max ${e.max} per person` : ""}</p></div>`;
+    if (showQ) h += (e.form || []).map(q => qHtml(q, st.a, locked)).join("");
+    if (showQ && e.pay) {
+      const t = liveTotal(e, st.a);
+      h += `<div class="card" style="text-align:left"><b>Payment</b><p style="margin:2px 0 0;color:var(--ink)">${t ? money(t) + " · " : ""}${esc(e.pay.details || "")}</p>
+        ${e.mine && e.mine.proof ? `<p style="margin:6px 0 0;color:#2f8f6b;font-weight:600">Screenshot received ✓</p>` : ""}
+        ${locked ? "" : `<button class="calbtn" data-pf>${st.file ? "Screenshot ready: " + esc(st.file.name) : e.mine && e.mine.proof ? "Replace payment screenshot" : "+ Add payment screenshot"}</button><input type="file" id="pfIn" accept="image/*,application/pdf" hidden>`}</div>`;
+    }
+    return h;
+  } };
+}
+function respondBar(e, st) {
+  if (e.closed || e.status === "cancelled") return "";
+  const order = e.kind === "order";
+  const t = (order || st.status === "going") ? liveTotal(e, st.a) : 0;
+  const label = order ? (e.mine && e.mine.status === "ordered" ? "Update order" : "Submit order") : (e.mine && e.mine.status ? "Update my RSVP" : "Save my RSVP");
+  return `<div class="evbar" style="flex-direction:column;align-items:stretch">${t && (order || e.pay) ? `<div style="text-align:center;font-size:13px;color:var(--muted)">Total <b style="color:var(--ink)">${money(t)}</b></div>` : ""}<button class="btn rose" data-rsave${!order && !st.status ? " disabled" : ""}>${label}</button></div>`;
+}
+async function sendProof(e, file) {
+  const r = await call("proofstart", { id: e.id, mime: file.type || "image/jpeg", size: file.size });
+  if (!r.ok) throw new Error(r.error);
+  await new Promise((ok, no) => {
+    const x = new XMLHttpRequest(); x.open("PUT", r.url); x.setRequestHeader("Content-Range", `bytes 0-${file.size - 1}/${file.size}`);
+    x.onload = () => (x.status === 200 || x.status === 201) ? ok() : no(new Error("drive_" + x.status)); x.onerror = () => no(new Error("network")); x.send(file);
+  });
+  const d = await call("proofdone", { uploadId: r.uploadId });
+  if (!d.ok) throw new Error(d.error);
+  return d.mine;
+}
+function unwireRespond() { const P = $("evPage"); if (P._rs) { P.removeEventListener("click", P._rs.c); P.removeEventListener("input", P._rs.i); P.removeEventListener("change", P._rs.h); P._rs = null; } }
+function wireRespond(e, rb, redraw) {
+  unwireRespond();
+  const P = $("evPage"), st = rb.st;
+  const onClick = async ev => {
+    const b = ev.target.closest("button"); if (!b || b.disabled) return;
+    if (b.dataset.rs) { st.status = b.dataset.rs; return redraw(); }
+    if (b.dataset.qs) { st.a[b.dataset.qs] = b.dataset.o; return redraw(); }
+    if (b.dataset.qm) { const l = st.a[b.dataset.qm] || []; st.a[b.dataset.qm] = l.includes(b.dataset.o) ? l.filter(x => x !== b.dataset.o) : l.concat(b.dataset.o); return redraw(); }
+    if (b.dataset.qy) { st.a[b.dataset.qy] = b.dataset.v; return redraw(); }
+    if (b.dataset.qi) { const m = st.a[b.dataset.qi] || (st.a[b.dataset.qi] = {}); m[b.dataset.o] = Math.max(0, (m[b.dataset.o] || 0) + +b.dataset.d); if (!m[b.dataset.o]) delete m[b.dataset.o]; return redraw(); }
+    if (b.dataset.pf !== undefined) return P.querySelector("#pfIn").click();
+    if (b.dataset.rwithdraw !== undefined) {
+      if (!confirm("Withdraw your order?")) return;
+      const r = await call("respond", { id: e.id, withdraw: true }).catch(() => ({}));
+      if (!r.ok) return toast("Couldn't withdraw. Try again");
+      e.mine = r.mine; saveItems(); renderEvents(); openEvent(e.id); return toast("Order withdrawn");
+    }
+    if (b.dataset.rsave !== undefined) {
+      b.disabled = true; b.innerHTML = LOADING;
+      const body = e.kind === "order" ? { id: e.id, answers: st.a } : { id: e.id, status: st.status, answers: st.status === "going" ? st.a : {} };
+      let r = await call("respond", body).catch(() => ({}));
+      if (!r.ok) {
+        b.disabled = false;
+        const q = (e.form || []).find(x => x.id === r.q);
+        redraw();
+        return toast({ required: q ? `Please answer "${q.label}"` : "Please answer the required questions", over_max: `Max ${e.max} per person`, empty_order: "Please pick at least one item", closed: "Sorry, this has closed" }[r.error] || "Couldn't save. Try again");
+      }
+      e.mine = r.mine;
+      if (st.file) { try { e.mine = await sendProof(e, st.file); st.file = null; } catch (err) { toast("Saved, but the screenshot didn't upload. Try again"); } }
+      saveItems(); renderEvents(); openEvent(e.id);
+      toast(e.kind === "order" ? "Order saved" : st.status === "going" ? "See you there!" : "Thanks for letting us know");
+    }
+  };
+  const onInput = ev => {
+    const t = ev.target;
+    if (t.dataset.qn !== undefined) st.a[t.dataset.qn] = t.value === "" ? undefined : +t.value;
+    if (t.dataset.qt !== undefined) st.a[t.dataset.qt] = t.value;
+  };
+  const onChange = ev => {
+    if (ev.target.id !== "pfIn") return;
+    const f = ev.target.files[0]; ev.target.value = "";
+    if (!f) return;
+    if (f.size > 15 * 1024 * 1024) return toast("That file is too big (max 15 MB)");
+    st.file = f;
+    if (e.mine && e.mine.status && e.mine.status !== "withdrawn") {             // already answered: send it straight away
+      toast("Uploading screenshot…");
+      sendProof(e, f).then(m => { e.mine = m; st.file = null; saveItems(); openEvent(e.id); toast("Screenshot received"); })
+        .catch(() => { toast("Couldn't upload. Try again"); redraw(); });
+    } else redraw();
+  };
+  P.addEventListener("click", onClick); P.addEventListener("input", onInput); P.addEventListener("change", onChange);
+  P._rs = { c: onClick, i: onInput, h: onChange };
+}
+// ----- results (core team) -----
+function openResults(e) {
+  unwireRespond();
+  const P = $("evPage");
+  P.innerHTML = `<div class="evcover" style="min-height:110px"><button class="evback" data-rback aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><h2>${esc(e.title)}</h2><p>Results</p></div><div class="evbody" id="rsB"><div class="card"><p>${LOADING}</p></div></div>`;
+  P.hidden = false; P.scrollTop = 0;
+  P.onclick = ev => { const b = ev.target.closest("button"); if (b && b.dataset.rback !== undefined) openEvent(e.id); };
+  call("results", { id: e.id }).then(r => {
+    if (!r.ok) throw 0;
+    const order = e.kind === "order", form = r.form || [];
+    const going = r.rows.filter(x => x.status === "going" || x.status === "ordered"), not = r.rows.filter(x => x.status === "not");
+    let view = "";
+    const tiles = order ? [["Orders", going.length, "going"], ["No reply", r.noReply.length, "noreply"], ["Total", money(going.reduce((s, x) => s + x.total, 0)), ""], ["Withdrawn", 0, ""]].slice(0, 3)
+      : [["Going", going.length, "going"], ["Not going", not.length, "not"], ["No reply", r.noReply.length, "noreply"], ["Guests", 0, ""]];
+    const summary = () => form.map(q => {
+      let rows = [];
+      if (q.type === "items") rows = q.options.map(o => [o.label, going.reduce((s, x) => s + (((x.answers[q.id] || {})[o.id]) || 0), 0)]);
+      else if (q.type === "single" || q.type === "multi") rows = q.options.map(o => [o.label, going.filter(x => q.type === "single" ? x.answers[q.id] === o.id : (x.answers[q.id] || []).includes(o.id)).length]);
+      else if (q.type === "yesno") rows = [["Yes", going.filter(x => x.answers[q.id] === "yes").length], ["No", going.filter(x => x.answers[q.id] === "no").length]];
+      else rows = going.filter(x => x.answers[q.id] !== undefined && x.answers[q.id] !== "").map(x => [x.name, String(x.answers[q.id])]);
+      return `<div class="card" style="text-align:left"><b>${esc(q.label)}${q.type === "items" ? " · totals" : ""}</b>${rows.map(([l, n]) => `<div class="rrow"><span>${esc(l)}</span><b>${esc(n)}</b></div>`).join("") || `<p style="margin:6px 0 0">No answers yet.</p>`}</div>`;
+    }).join("");
+    const pay = e.pay ? `<div class="card" style="text-align:left"><b>Payment proof</b><div class="rrow"><span>Uploaded</span><b style="color:#2f8f6b">${going.filter(x => x.proof).length}</b></div><div class="rrow"><span>Missing</span><b style="color:var(--bad)">${going.filter(x => !x.proof).length}</b></div></div>` : "";
+    const people = list => `<div class="card" style="text-align:left">${list.map(x => `<div class="rrow"><span>${esc(x.name || x.a)}</span><span>${x.total ? money(x.total) + " " : ""}${e.pay && x.status ? (x.proofLive ? `<button class="linkbtn" data-pv="${esc(x.who)}">view proof</button>` : x.proof ? `<small>paid ✓</small>` : `<small style="color:var(--bad)">no proof</small>`) : `<small>${esc(x.g || x.group || "")}</small>`}</span></div>`).join("") || `<p style="margin:0">No one here.</p>`}</div>`;
+    const draw = () => {
+      const B = $("rsB"); if (!B) return;
+      let h = `<div class="tiles">${tiles.map(([l, n, k]) => `<button class="${view === k && k ? "on" : ""}" data-tv="${k}"${k ? "" : " disabled"}><b>${n}</b><span>${l}</span></button>`).join("")}</div>`;
+      if (view === "going") h += people(going);
+      else if (view === "not") h += people(not);
+      else if (view === "noreply") h += people(r.noReply) + `<div class="card"><button class="btn rose" data-exp>Export no-reply list</button><p style="margin:8px 0 0">Saved to the event's tab in EXO Event Attendance Collation</p></div>`;
+      else h += summary() + pay;
+      h += r.tab ? `<div class="card"><a class="btn ghost" href="${esc(r.tab)}" target="_blank" rel="noopener" style="text-decoration:none">Open the event's tab in Google Sheets</a></div>` : "";
+      B.innerHTML = h;
+    };
+    draw();
+    P.onclick = ev => {
+      const b = ev.target.closest("button,a"); if (!b) return;
+      if (b.dataset.rback !== undefined) return openEvent(e.id);
+      if (b.dataset.tv !== undefined) { view = view === b.dataset.tv ? "" : b.dataset.tv; return draw(); }
+      if (b.dataset.exp !== undefined) { b.disabled = true; call("exportnoreply", { id: e.id }).then(x => { b.disabled = false; if (!x.ok) throw 0; toast("Exported to " + x.tab.name); }).catch(() => { b.disabled = false; toast("Couldn't export. Try again"); }); }
+      if (b.dataset.pv) {
+        toast("Loading screenshot…");
+        call("proofview", { id: e.id, who: b.dataset.pv }).then(x => {
+          if (!x.ok) throw 0;
+          const sh = sheet(`<img src="${x.img}" alt="" style="width:100%;border-radius:12px;max-height:70vh;object-fit:contain"><div class="btns"><button class="btn ghost" data-close>Close</button></div>`);
+        }).catch(() => toast("Couldn't load the screenshot"));
+      }
+    };
+  }).catch(() => { const B = $("rsB"); if (B) B.innerHTML = `<div class="card"><p>Couldn't load the results. Try again.</p></div>`; });
 }
 
 /* ---------- reactions & comments ---------- */
@@ -1316,6 +1608,7 @@ document.addEventListener("click", e => {
     return showTab(b.dataset.tab);
   }
   if (b.dataset.evnew !== undefined) return openBuilder(null);
+  if (b.dataset.ordnew !== undefined) return openBuilder(null, "order");
   if (b.dataset.ev && b.classList.contains("evc")) return openEvent(b.dataset.ev);
   if (b.dataset.hk) { $("tagQ").value = ""; $("tagHits").hidden = true; S.filter = { k: b.dataset.hk, v: b.dataset.hv }; return render(); }
   if (b.dataset.evf) { closeViewer(); closeEvent(); S.filter = { k: "event", v: b.dataset.evf }; showTab("moments"); return render(); }
