@@ -1430,15 +1430,16 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events 
     const sel = new Set(people || []), hs = [...(tags || [])];
     const shade = document.createElement("div"); shade.className = "shade";
     shade.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p class="sub">${esc(sub || "")}</p>
-      <label>People</label><input id="tsQ" placeholder="Search names" autocomplete="off"><div class="picked" id="tsP"></div><div class="plist" id="tsL"></div>
-      ${events && events.length ? `<label>Event</label><select id="tsE"><option value="">No event</option>${events.map(e => `<option value="${esc(e.id)}"${e.id === event ? " selected" : ""}>${esc(e.title)} · ${(p => p.d + " " + MON[p.m])(sgParts(e.start))}</option>`).join("")}</select>` : ""}
+      <label>People</label><input id="tsQ" placeholder="Type a name to tag someone" autocomplete="off"><div class="plist" id="tsL" hidden style="flex:none;max-height:30vh"></div><div class="picked" id="tsP"></div>
       <label>Hashtags</label><input id="tsH" placeholder="#cedli #teamlunch" autocomplete="off" autocapitalize="none"><div class="picked" id="tsHs"></div>
+      ${events && events.length ? `<label>Event</label><select id="tsE"><option value="">No event</option>${events.map(e => `<option value="${esc(e.id)}"${e.id === event ? " selected" : ""}>${esc(e.title)} · ${(p => p.d + " " + MON[p.m])(sgParts(e.start))}</option>`).join("")}</select>` : ""}
       <div class="btns">${skipLabel ? `<button class="btn ghost" data-ts="skip">${esc(skipLabel)}</button>` : `<button class="btn ghost" data-ts="cancel">Cancel</button>`}<button class="btn rose" data-ts="ok">${esc(okLabel)}</button></div></div>`;
     document.body.appendChild(shade);
     const q = shade.querySelector("#tsQ"), L = shade.querySelector("#tsL"), P = shade.querySelector("#tsP"), H = shade.querySelector("#tsH"), HS = shade.querySelector("#tsHs");
     const draw = () => {
       const s = q.value.trim().toLowerCase();
-      L.innerHTML = S.people.filter(p => !s || p.a.toLowerCase().includes(s) || p.n.toLowerCase().includes(s))
+      L.hidden = !s;                                    // no full list: only matches while typing
+      L.innerHTML = !s ? "" : S.people.filter(p => p.a.toLowerCase().includes(s) || p.n.toLowerCase().includes(s))
         .map(p => `<button class="${sel.has(p.n) ? "on" : ""}" data-n="${esc(p.n)}"><b>${esc(p.a)}</b><small>${p.a === p.n ? "" : esc(p.n)}</small></button>`).join("") || `<p style="padding:10px;color:var(--muted);font-size:14px;margin:0">No match</p>`;
       P.innerHTML = [...sel].map(n => `<button data-rm="${esc(n)}">${esc(alias(n))} ×</button>`).join("");
       HS.innerHTML = hs.map(t => `<button class="h" data-rmh="${esc(t)}">#${esc(t)} ×</button>`).join("");
@@ -1455,7 +1456,7 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events 
       const b = e.target.closest("button");
       if (e.target === shade) { shade.remove(); return done(null); }
       if (!b) return;
-      if (b.dataset.n) { sel.has(b.dataset.n) ? sel.delete(b.dataset.n) : sel.add(b.dataset.n); draw(); }
+      if (b.dataset.n) { sel.has(b.dataset.n) ? sel.delete(b.dataset.n) : sel.add(b.dataset.n); q.value = ""; draw(); q.focus(); }
       else if (b.dataset.rm) { sel.delete(b.dataset.rm); draw(); }
       else if (b.dataset.rmh) { hs.splice(hs.indexOf(b.dataset.rmh), 1); draw(); }
       else if (b.dataset.ts) {
