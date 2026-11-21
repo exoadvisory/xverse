@@ -106,7 +106,8 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
 .sheet{background:var(--card);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:88vh;display:flex;flex-direction:column}
 .sheet h3{margin:0 0 2px;font-size:17px}.sheet .sub{margin:0 0 10px;color:var(--muted);font-size:13px}
 .sheet label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin:10px 0 6px;display:block}
-.sheet input{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+.sheet input,.sheet select{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+.sheet select,.fm select{-webkit-appearance:none;appearance:none;min-height:46px;padding-right:36px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%232f3240' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center}
 .picked{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .picked button{border:0;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600;background:var(--ink);color:#fff;cursor:pointer}
 .picked button.h{background:var(--rose2)}
@@ -1001,7 +1002,7 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events 
     const shade = document.createElement("div"); shade.className = "shade";
     shade.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p class="sub">${esc(sub || "")}</p>
       <label>People</label><input id="tsQ" placeholder="Search names" autocomplete="off"><div class="picked" id="tsP"></div><div class="plist" id="tsL"></div>
-      ${events && events.length ? `<label>Event</label><select id="tsE"><option value="">No event</option>${events.map(e => `<option value="${esc(e.id)}"${e.id === event ? " selected" : ""}>${esc(e.title)} · ${esc(e.tag)}</option>`).join("")}</select>` : ""}
+      ${events && events.length ? `<label>Event</label><select id="tsE"><option value="">No event</option>${events.map(e => `<option value="${esc(e.id)}"${e.id === event ? " selected" : ""}>${esc(e.title)} · ${(p => p.d + " " + MON[p.m])(sgParts(e.start))}</option>`).join("")}</select>` : ""}
       <label>Hashtags</label><input id="tsH" placeholder="#cedli #teamlunch" autocomplete="off" autocapitalize="none"><div class="picked" id="tsHs"></div>
       <div class="btns">${skipLabel ? `<button class="btn ghost" data-ts="skip">${esc(skipLabel)}</button>` : `<button class="btn ghost" data-ts="cancel">Cancel</button>`}<button class="btn rose" data-ts="ok">${esc(okLabel)}</button></div></div>`;
     document.body.appendChild(shade);
