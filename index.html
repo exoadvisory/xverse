@@ -115,6 +115,7 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
 .tsstrip button.on{border-color:var(--rose2)}
 .tsstrip img,.tsstrip video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .tsstrip .vb{position:absolute;right:4px;bottom:3px;color:#fff;font-size:11px;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+#tsG{margin-top:8px}#tsG .chip.grp{background:#fff}
 .picked{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .picked button{border:0;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600;background:var(--ink);color:#fff;cursor:pointer}
 .picked button.h{background:var(--rose2)}
@@ -1608,7 +1609,7 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events,
     const freeUrls = () => urls.forEach(x => URL.revokeObjectURL(x.u));
     const shade = document.createElement("div"); shade.className = "shade";
     shade.innerHTML = `<div class="sheet" style="overflow-y:auto" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p class="sub">${esc(sub || "")}</p>${prev}
-      <label>People</label><input id="tsQ" placeholder="Type a name to tag someone" autocomplete="off"><div class="plist" id="tsL" hidden style="flex:none;max-height:30vh"></div><div class="picked" id="tsP"></div>
+      <label>People</label><input id="tsQ" placeholder="Type a name to tag someone" autocomplete="off"><div id="tsG"></div><div class="plist" id="tsL" hidden style="flex:none;max-height:30vh"></div><div class="picked" id="tsP"></div>
       <label>Hashtags</label><input id="tsH" placeholder="#cedli #teamlunch" autocomplete="off" autocapitalize="none"><div class="picked" id="tsHs"></div>
       ${events && events.length ? `<label>Event</label><select id="tsE"><option value="">No event</option>${events.map(e => `<option value="${esc(e.id)}"${e.id === event ? " selected" : ""}>${esc(e.title)} · ${(p => p.d + " " + MON[p.m])(sgParts(e.start))}</option>`).join("")}</select>` : ""}
       <div class="btns">${skipLabel ? `<button class="btn ghost" data-ts="skip">${esc(skipLabel)}</button>` : `<button class="btn ghost" data-ts="cancel">Cancel</button>`}<button class="btn rose" data-ts="ok">${esc(okLabel)}</button></div></div>`;
@@ -1620,6 +1621,9 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events,
       L.innerHTML = !s ? "" : S.people.filter(p => p.a.toLowerCase().includes(s) || p.n.toLowerCase().includes(s))
         .map(p => `<button class="${sel.has(p.n) ? "on" : ""}" data-n="${esc(p.n)}"><b>${esc(p.a)}</b><small>${p.a === p.n ? "" : esc(p.n)}</small></button>`).join("") || `<p style="padding:10px;color:var(--muted);font-size:14px;margin:0">No match</p>`;
       P.innerHTML = [...sel].map(n => `<button data-rm="${esc(n)}">${esc(alias(n))} ×</button>`).join("");
+      // group button: tags everyone in Core Team (untick anyone who isn't in the photo with ×)
+      const ct = S.people.filter(p => p.g === "core team");
+      shade.querySelector("#tsG").innerHTML = ct.length ? `<button class="chip grp" data-tg>${ct.every(p => sel.has(p.n)) ? "✓ " : "+ "}Core Team (${ct.length})</button>` : "";
       HS.innerHTML = hs.map(t => `<button class="h" data-rmh="${esc(t)}">#${esc(t)} ×</button>`).join("");
     };
     const addTags = () => {
@@ -1641,6 +1645,7 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events,
       }
       if (b.dataset.n) { sel.has(b.dataset.n) ? sel.delete(b.dataset.n) : sel.add(b.dataset.n); q.value = ""; draw(); q.focus(); }
       else if (b.dataset.rm) { sel.delete(b.dataset.rm); draw(); }
+      else if (b.dataset.tg !== undefined) { const ct = S.people.filter(p => p.g === "core team"); if (ct.every(p => sel.has(p.n))) ct.forEach(p => sel.delete(p.n)); else ct.forEach(p => sel.add(p.n)); draw(); }
       else if (b.dataset.rmh) { hs.splice(hs.indexOf(b.dataset.rmh), 1); draw(); }
       else if (b.dataset.ts) {
         addTags(); shade.remove(); freeUrls();
