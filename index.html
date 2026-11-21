@@ -214,6 +214,13 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .qed textarea{margin-top:8px}
 .evc .dt.o{background:linear-gradient(160deg,#7a5c66,#c4877f)}
 .evpast .evc{opacity:.55;filter:grayscale(.35)}
+.or{display:flex;align-items:center;gap:10px;margin:18px 0 10px;color:var(--muted);font-size:13px}.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+#gbtn2{display:flex;justify-content:center;min-height:44px}
+.matte{position:relative;border-radius:14px;overflow:hidden;min-height:420px}.matte .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.matte .grid div{aspect-ratio:1;border-radius:6px;background:#d9cfc2;filter:blur(4px)}.matte .grid div:nth-child(3n+1){background:#cbb9a8}.matte .grid div:nth-child(4n){background:#b9a6a0}
+.matte .over{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:rgba(246,243,238,.55)}
+.matte .over h3{margin:6px 0 4px}.matte .over p{color:var(--muted);font-size:14px;margin:0 0 14px}
+.prevbar{background:#2f3240;color:#fff;text-align:center;font-size:13px;font-weight:600;padding:8px}
+.consent{font-size:12.5px;color:var(--muted);text-align:center;margin:0 0 6px;line-height:1.4}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 </style>
 </head>
@@ -321,7 +328,7 @@ function loadPass() {
 }
 function savePass(p, exp) { try { p ? localStorage.setItem("xv-pass", JSON.stringify({ pass: p, exp })) : localStorage.removeItem("xv-pass"); } catch (e) {} }
 function wipeLocal() {
-  ["xv-pass", "xv-items", "xv-seen", "xv-evseen"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+  ["xv-pass", "xv-items", "xv-seen", "xv-evseen", "xv-gname"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
   if (window.caches) caches.delete("xv-thumbs").catch(() => {});
   Object.keys(TH).forEach(k => delete TH[k]);
   S.pass = null; S.me = null; S.items = null; S.comments = {}; S.seen = null;
@@ -330,13 +337,18 @@ function wipeLocal() {
 /* ---------- status cards ---------- */
 function status(html) { $("status").innerHTML = html ? `<div class="card">${html}</div>` : ""; $("album").hidden = !!html; }
 function showSignIn(msg) {
-  status(`<div class="ico">${ICON.lock}</div><h3>Sign in to Xverse</h3><p>${msg || "Use the Google account that has the EXO Folder."}</p><div id="gbtn"><p>Loading Google sign-in…</p></div>`);
+  const forEvent = DEEP.ev ? `<p style="color:var(--ink);font-weight:600">Sign in to see the event and register.</p>` : "";
+  status(`<div class="ico">${ICON.lock}</div><h3>Sign in to Xverse</h3>${forEvent}<p>${msg || "EXOians: use the Google account that has the EXO Folder."}</p><div id="gbtn"><p>Loading Google sign-in…</p></div>
+    <div class="or"><span>Not an EXOian yet?</span></div><div id="gbtn2"></div><p style="margin-top:6px">Guests can sign up for events that are open to guests.</p>`);
   loadGis().then(() => {
-    const el = $("gbtn"); if (!el) return;
+    const el = $("gbtn"), el2 = $("gbtn2"); if (!el) return;
     el.innerHTML = "";
     google.accounts.id.renderButton(el, { theme: "filled_black", size: "large", shape: "pill", text: "signin_with", width: 240 });
+    if (el2) google.accounts.id.renderButton(el2, { theme: "outline", size: "large", shape: "pill", text: "continue_with", width: 240 });
   }).catch(() => { const el = $("gbtn"); if (el) el.innerHTML = "<p>Couldn't load Google sign-in. Check your connection and refresh.</p>"; });
 }
+// name from the Google sign-in (guests' name box starts with it)
+function nameFromToken(cred) { try { const b = cred.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"); return JSON.parse(decodeURIComponent(escape(atob(b)))).name || ""; } catch (e) { return ""; } }
 function loadGis() {
   if (S.gis) return S.gis;
   S.gis = new Promise((ok, no) => {
@@ -358,7 +370,8 @@ function onCredential(cred) {
   status(`<div class="ico">${ICON.lock}</div><h3>Checking the guest list…</h3>`);
   api({ action: "signin", idToken: cred }).then(r => {
     if (!r.ok) return showSignIn("That sign-in didn't work. Please try again.");
-    if (r.access !== "ok") return notListed(r.email);
+    if (r.access !== "ok" && r.access !== "guest") return notListed(r.email);
+    if (r.access === "guest") { const n = nameFromToken(cred); if (n) try { localStorage.setItem("xv-gname", n); } catch (e) {} }
     savePass(r.pass, r.exp); S.pass = r.pass;
     openApp();
   }).catch(() => offline(() => onCredential(cred)));
@@ -398,9 +411,23 @@ function openApp() {
     S.events = r.events || []; S.evLabels = r.evLabels || {};
     saveItems();
     render();
+    afterOpen();
   }).catch(() => { if (!quiet) offline(openApp); });
 }
 
+// links like …/xverse/?ev=<event>&ref=<FC code> open straight on the event (the code credits the FC who shared it)
+const DEEP = (() => { const q = new URLSearchParams(location.search); const d = { ev: q.get("ev") || "", ref: q.get("ref") || "" };
+  try { if (d.ref) sessionStorage.setItem("xv-ref", d.ref); else d.ref = sessionStorage.getItem("xv-ref") || ""; } catch (e) {} return d; })();
+let deepDone = false;
+function afterOpen() {
+  const guest = S.me && S.me.role === "guest";
+  if (guest && S.tab !== "events") showTab("events");
+  if (DEEP.ev && !deepDone) {
+    deepDone = true;
+    if (S.events.some(e => e.id === DEEP.ev)) { showTab("events"); openEvent(DEEP.ev); }
+    else toast("That event isn't open to you, or it has ended");
+  }
+}
 /* ---------- what's new for me (kept on this phone) ---------- */
 function saveItems() { try { localStorage.setItem("xv-items", JSON.stringify({ me: S.me, people: S.people, items: S.items, comments: S.comments, events: S.events, evLabels: S.evLabels })); } catch (e) {} }
 const ms = iso => Date.parse(iso) || 0;
@@ -435,6 +462,7 @@ function filtered() {
 function render() {
   status("");
   const me = S.me || {};
+  if (me.role === "guest") return renderGuest();
   $("upbar").hidden = !me.canUpload;
   $("vonly").hidden = me.canUpload !== false;
   // filter chips: All · Photos of me · My uploads · People · top hashtags
@@ -486,6 +514,28 @@ function render() {
 }
 function setImg(img, url) { img.onload = () => img.classList.add("ld"); img.src = url; }
 
+/* ---------- guests: Moments + Memories stay locked; events open to guests only ---------- */
+function renderGuest() {
+  $("album").hidden = true;
+  let g = $("guestPanel");
+  if (!g) { g = document.createElement("div"); g.id = "guestPanel"; $("tab-moments").appendChild(g); }
+  g.innerHTML = `<div class="matte"><div class="grid">${"<div></div>".repeat(15)}</div><div class="over"><div class="ico">${ICON.lock}</div><h3>Moments are for EXOians</h3>
+    <p>Retreats, celebrations and everyday wins, shared by the team.</p><button class="btn rose" data-talk>Interested in joining? Talk to us</button></div></div>
+    <p class="foot">Signed in as a guest (${esc(S.me.email || "")}) · <button class="linkbtn" data-switch>Switch account</button></p>`;
+  evDot();
+}
+function talkSheet() {
+  let n = ""; try { n = localStorage.getItem("xv-gname") || ""; } catch (e) {}
+  const sh = sheet(`<h3>Talk to us</h3><p class="sub">Leave your name and a short note. The EXO team will reach out by email.</p>
+    <div class="fm"><label>Your name</label><input id="tkN" value="${esc(n)}" maxlength="80"><label>Message (optional)</label><textarea id="tkM" maxlength="500" placeholder="e.g. I'd like to know more about joining EXO"></textarea></div>
+    <div class="btns"><button class="btn ghost" data-close>Cancel</button><button class="btn rose" id="tkGo">Send</button></div>`);
+  sh.querySelector("#tkGo").onclick = () => {
+    const name = sh.querySelector("#tkN").value.trim();
+    if (name.length < 2) return toast("Please add your name");
+    call("talk", { name, message: sh.querySelector("#tkM").value.trim() }).then(r => { if (!r.ok) throw 0; sh.remove(); toast("Thanks! The EXO team will be in touch."); })
+      .catch(() => toast("Couldn't send. Try again"));
+  };
+}
 /* ---------- small images (cached on this phone) ---------- */
 const TH = {};
 const tKey = (id, size) => `./__xv/${encodeURIComponent(id)}-${size}`;
@@ -743,7 +793,7 @@ function renderEvents() {
   const cancelled = core ? S.events.filter(e => e.status === "cancelled") : [];
   // like a calendar: past events above (greyed, oldest first), and the page opens at the next upcoming one
   let h = past.length ? `<div class="evsec">Past</div><div class="evpast">${past.slice().reverse().map(evCard).join("")}</div>` : "";
-  h += `<div id="evNow"></div><div class="evhead"><h2>Events</h2>${core ? `<span><button class="btn ghost" data-ordnew style="padding:9px 12px">+ Order</button> <button class="btn rose" data-evnew style="padding:9px 14px">+ Event</button></span>` : ""}</div>`;
+  h += `<div id="evNow"></div><div class="evhead"><h2>Events</h2>${core ? `<span><button class="btn ghost" data-guests style="padding:9px 12px">Guests</button> <button class="btn ghost" data-ordnew style="padding:9px 12px">+ Order</button> <button class="btn rose" data-evnew style="padding:9px 14px">+ Event</button></span>` : ""}</div>`;
   if (orders.length) h += `<div class="evsec">Orders</div>` + orders.map(evCard).join("");
   h += up.length ? `<div class="evsec">Upcoming</div>` + up.map(evCard).join("") : `<div class="card"><p>No upcoming events right now.</p></div>`;
   if (hidden.length) h += `<details class="more2"><summary>From the calendar, not shown to FCs · ${hidden.length} ›</summary>${hidden.map(evCard).join("")}</details>`;
@@ -764,21 +814,28 @@ function addToCalendar(e) {
   const a = document.createElement("a"); a.href = url; a.download = (e.tag || "event") + ".ics"; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-function closeEvent() { unwireRespond(); $("evPage").hidden = true; $("evPage").innerHTML = ""; document.body.style.overflow = ""; }
-function openEvent(id) {
+function shareEvent(e) {
+  const url = location.origin + location.pathname + "?ev=" + encodeURIComponent(e.id) + "&ref=" + encodeURIComponent(S.me.ref);
+  if (navigator.share) return navigator.share({ title: e.title, text: e.title + " · register on Xverse", url }).catch(() => {});
+  (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast("Link copied")).catch(() => prompt("Copy this link", url));
+}
+function closeEvent() { unwireRespond(); S.preview = false; $("evPage").hidden = true; $("evPage").innerHTML = ""; document.body.style.overflow = ""; }
+function openEvent(id, opt) {
   const e = S.events.find(x => x.id === id); if (!e) return;
   unwireRespond();
-  const core = S.me && S.me.core, order = e.kind === "order";
+  S.preview = !!(opt && opt.preview);
+  const core = S.me && S.me.core && !S.preview, order = e.kind === "order";
   const photos = (S.items || []).filter(x => x.ev === id);
   const badge = e.status === "cancelled" ? "Cancelled" : e.invited ? "You're invited" : core && e.see === "hidden" ? "Hidden from FCs"
     : e.act === "rsvp" && !e.closed ? "RSVP by " + closesText(e) : order ? (e.closed ? "Orders closed" : "Closes " + closesText(e)) : "";
   const rb = e.act === "rsvp" || order ? respondBlock(e) : null;
   const P = $("evPage");
-  const page = () => `<div class="evcover"><button class="evback" data-evclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+  const page = () => `${S.preview ? `<div class="prevbar">Preview: this is what FCs see · <button class="linkbtn" data-unprev style="color:#e8a197">Back</button></div>` : ""}<div class="evcover"><button class="evback" data-evclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
     ${badge ? `<span class="bdg">${esc(badge)}</span>` : ""}<h2>${esc(e.title)}</h2><p>${order ? "Team order" + (e.max ? " · max " + e.max + " per person" : "") : esc(whenText(e)) + (e.venue ? " · " + esc(enPlace(e.venue)) : "")}</p></div>
     <div class="evbody">
       ${e.tag || e.note || !order ? `<div class="card" style="text-align:left">${e.tag ? `<span class="evtag">#${esc(e.tag)}</span>` : ""}
         ${e.note ? `<p style="white-space:pre-wrap;color:var(--ink);font-size:14px;margin:10px 0 0">${esc(e.note)}</p>` : ""}
+        ${S.me && S.me.ref && !S.preview && e.status !== "cancelled" && !e.closed && e.guestOpen ? `<button class="calbtn" data-share><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Share link with a guest</button>` : ""}
         ${order ? "" : `<button class="calbtn" data-evics><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>Add to my calendar</button>`}</div>` : ""}
       ${rb ? `<div id="rsArea">${rb.html()}</div>` : ""}
       ${order && e.mine && e.mine.status === "ordered" && !e.closed ? `<p style="text-align:center;margin:0 0 14px"><button class="linkbtn" data-rwithdraw style="color:var(--bad)">Withdraw my order</button></p>` : ""}
@@ -786,7 +843,7 @@ function openEvent(id) {
         ${photos.length ? `<div class="egrid">${photos.slice(0, 8).map(x => `<button data-evph="${esc(x.id)}"><img alt=""></button>`).join("")}</div>` : `<p style="margin:8px 0 0">No photos yet.</p>`}
         ${e.canUpload && e.status !== "cancelled" && rb ? `<button class="calbtn" data-evadd>Add photos to this event</button>` : ""}</div>` : ""}
       ${core ? `<div class="card" style="text-align:left"><b>Core team</b><p style="margin:6px 0 0">${order ? "Orders aren't added to the calendar." : e.cal ? "Linked with the EXO Calendar of Events." : "Not in the EXO Calendar of Events."}${e.recurring ? " Repeating entry: edit its date in the calendar." : ""}</p>
-        <div class="btns" style="justify-content:flex-start">${e.act !== "fyi" ? `<button class="btn rose" data-evres>Results</button>` : ""}<button class="btn ghost" data-evedit>Edit</button>${e.status === "cancelled" ? `<button class="btn ghost" data-evundo>Restore</button>` : `<button class="btn ghost" data-evcancel style="color:var(--bad)">Cancel</button>`}</div></div>` : ""}
+        <div class="btns" style="justify-content:flex-start">${e.act !== "fyi" ? `<button class="btn rose" data-evres>Results</button>` : ""}<button class="btn ghost" data-evedit>Edit</button><button class="btn ghost" data-evprev>Preview as FC</button>${e.status === "cancelled" ? `<button class="btn ghost" data-evundo>Restore</button>` : `<button class="btn ghost" data-evcancel style="color:var(--bad)">Cancel</button>`}</div></div>` : ""}
     </div>
     ${rb ? respondBar(e, rb.st) : e.canUpload && e.album && e.status !== "cancelled" ? `<div class="evbar"><button class="btn rose" data-evadd>Add photos to this event</button></div>` : ""}`;
   P.innerHTML = page();
@@ -800,7 +857,10 @@ function openEvent(id) {
   const redraw = () => { const A = $("rsArea"); if (A) A.innerHTML = rb.html(); const bar = P.querySelector(".evbar"); if (bar) bar.outerHTML = respondBar(e, rb.st); else if (rb) P.insertAdjacentHTML("beforeend", respondBar(e, rb.st)); };
   P.onclick = ev => {
     const b = ev.target.closest("button"); if (!b) return;
-    if (b.dataset.evclose !== undefined) return closeEvent();
+    if (b.dataset.evclose !== undefined) { S.preview = false; return closeEvent(); }
+    if (b.dataset.unprev !== undefined) return openEvent(id);
+    if (b.dataset.evprev !== undefined) return openEvent(id, { preview: true });
+    if (b.dataset.share !== undefined) return shareEvent(e);
     if (b.dataset.evics !== undefined) return addToCalendar(e);
     if (b.dataset.evadd !== undefined) { UP.preset = id; return $("pick").click(); }
     if (b.dataset.evph) { closeEvent(); S.filter = { k: "event", v: id }; showTab("moments"); render(); const i = filtered().findIndex(x => x.id === b.dataset.evph); return openViewer(Math.max(0, i)); }
@@ -855,6 +915,7 @@ function openBuilder(e, kindNew) {
     P.innerHTML = `<div class="evcover" style="min-height:110px"><button class="evback" data-bclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
       <h2>${isNew ? (order ? "New order" : "New event") : order ? "Edit order" : "Set up event"}</h2>${f.cal && !isNew && !order ? `<p>From the EXO Calendar of Events · edits sync both ways</p>` : ""}</div>
       <div class="evbody fm">
+        ${isNew ? `<button class="calbtn" data-bcopy style="margin:0 0 14px">Copy from a past ${order ? "order" : "event"}</button>` : ""}
         <div class="card" style="text-align:left"><b>1 · Details</b>
           <label>Title</label><input id="bT" value="${esc(f.title)}" maxlength="120" placeholder="${order ? "e.g. Raya Green Packets 2027" : "e.g. Nov Anniversary Lunch"}">
           ${order ? "" : `<label>Date</label>${f.recurring ? `<div class="pick"><span>${esc(dateLbl(date))}</span></div>` : pick("bD", "date", date)}
@@ -864,7 +925,7 @@ function openBuilder(e, kindNew) {
           <label>Note</label><textarea id="bN" maxlength="1000">${esc(f.note)}</textarea></div>
         <div class="card" style="text-align:left"><b>2 · ${order ? "Who can order" : "Who can see it"}</b><div class="seg2" style="margin-top:8px">
             ${(order ? ["groups", "invitees"] : ["hidden", "groups", "invitees"]).map(k => `<button data-bsee="${k}" class="${f.see === k ? "on" : ""}">${{ hidden: "Hidden", groups: "Groups", invitees: "Invitees" }[k]}</button>`).join("")}</div>
-          ${f.see === "groups" ? `<div class="seg2" style="margin-top:10px">${[["core", "Core"], ["xcademy", "Xcademy"], ["candidate", "Candidates"]].map(([k, l]) => `<button data-bgrp="${k}" class="${f.groups.includes(k) ? "on" : ""}">${l}</button>`).join("")}</div>` : ""}
+          ${f.see === "groups" ? `<div class="seg2" style="margin-top:10px">${[["core", "Core"], ["xcademy", "Xcademy"], ["candidate", "Candidates"]].concat(order ? [] : [["guest", "Guests"]]).map(([k, l]) => `<button data-bgrp="${k}" class="${f.groups.includes(k) ? "on" : ""}">${l}</button>`).join("")}</div>${f.groups.includes("guest") ? `<p style="margin:8px 0 0">Open to guests: anyone with a Google account can register from a shared link.</p>` : ""}` : ""}
           ${f.see === "invitees" ? `<div class="swr"><span>${f.people.length} ${f.people.length === 1 ? "person" : "people"} selected</span><button class="linkbtn" data-binv>Edit ›</button></div>` : ""}
           ${f.see === "hidden" ? `<p style="margin:8px 0 0">Only the core team sees it.</p>` : ""}</div>
         <div class="card" style="text-align:left"><b>3 · ${order ? "Order form" : "What people do"}</b>
@@ -930,6 +991,15 @@ function openBuilder(e, kindNew) {
     }
     if (b.dataset.bgrp) { grab(); const g = b.dataset.bgrp; f.groups = f.groups.includes(g) ? f.groups.filter(x => x !== g) : f.groups.concat(g); return draw(); }
     if (b.dataset.binv !== undefined) { grab(); return invitePicker(f, draw); }
+    if (b.dataset.bcopy !== undefined) { grab(); return copyPicker(order, date, src => {
+      // copy the set-up, not the dates: title, venue, note, who, what people do, questions, payment, album
+      Object.assign(f, { title: src.title, venue: src.venue || "", note: src.note || "", see: src.see === "hidden" ? "groups" : src.see, groups: (src.groups || []).slice(), people: (src.people || []).slice(),
+        rule: src.rule || null, act: src.act === "order" ? "order" : src.act || "fyi", form: JSON.parse(JSON.stringify(src.form || [])), pay: src.pay ? Object.assign({ on: true }, src.pay) : { on: false, amount: 0, details: "" },
+        max: src.max || 0, album: !order && !!src.album, allDay: !!src.allDay, tag: "" });
+      if (!src.allDay && src.start) { t1 = sgTimeStr(src.start); t2 = src.end ? sgTimeStr(src.end) : ""; }
+      tagTouched = false; tabName = ""; dlD = ""; finD = "";
+      draw(); toast("Copied. Now set the new date" + (f.act !== "fyi" ? " and closing date" : ""));
+    }); }
     if (b.dataset.qadd !== undefined) { grab(); f.form.push({ id: "q" + Date.now().toString(36), type: order ? "single" : "single", label: "", required: false, options: [] }); return draw(); }
     if (b.dataset.qrm !== undefined) { grab(); f.form.splice(+b.dataset.qrm, 1); return draw(); }
     if (b.dataset.bsave !== undefined) {
@@ -965,6 +1035,23 @@ function openBuilder(e, kindNew) {
         }).catch(() => draw("Couldn't reach Xverse. Try again."));
     }
   };
+}
+// Copy from a past event/order: "around this time last year" first, then search everything
+function copyPicker(order, dateStr, pickFn) {
+  const ref = dateStr ? new Date(dateStr + "T12:00:00+08:00") : new Date();
+  const lastYear = new Date(ref.getTime() - 365 * 864e5).getTime();
+  const pool = S.events.filter(e => (order ? e.kind === "order" : e.kind !== "order") && (e.act !== "fyi" || e.see !== "hidden"));
+  const near = pool.filter(e => Math.abs(ms(e.start) - lastYear) < 45 * 864e5).sort((a, b) => Math.abs(ms(a.start) - lastYear) - Math.abs(ms(b.start) - lastYear));
+  const row = e => `<button data-cp="${esc(e.id)}"><b>${esc(e.title)}</b><small>${(p => p.d + " " + MON[p.m] + " " + p.y)(sgParts(e.start))}${e.act === "rsvp" ? " · RSVP" : e.kind === "order" ? " · order" : ""}</small></button>`;
+  const sh = sheet(`<h3>Copy from a past ${order ? "order" : "event"}</h3><p class="sub">Copies the set-up (who, questions, payment, album). You'll set the new dates.</p>
+    ${near.length ? `<label>Around this time last year</label><div class="plist" style="max-height:24vh">${near.slice(0, 6).map(row).join("")}</div>` : ""}
+    <label>Search all</label><input id="cpQ" placeholder="e.g. Goal Set, CEDLI, Year End" autocomplete="off" style="font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;width:100%">
+    <div class="plist" id="cpL" style="max-height:30vh"></div><div class="btns"><button class="btn ghost" data-close>Cancel</button></div>`);
+  const Q = sh.querySelector("#cpQ"), L = sh.querySelector("#cpL");
+  const draw = () => { const q = Q.value.trim().toLowerCase();
+    L.innerHTML = pool.filter(e => !q || e.title.toLowerCase().includes(q) || (e.tag || "").toLowerCase().includes(q)).sort((a, b) => ms(b.start) - ms(a.start)).slice(0, 40).map(row).join("") || `<p style="padding:10px;margin:0;color:var(--muted);font-size:14px">No match</p>`; };
+  Q.oninput = draw; draw();
+  sh.addEventListener("click", ev => { const b = ev.target.closest("[data-cp]"); if (!b) return; const src = S.events.find(x => x.id === b.dataset.cp); sh.remove(); if (src) pickFn(src); });
 }
 // Invitees: suggest by group + anniversary/birthday month, then untick or add people by hand
 function invitePicker(f, after) {
@@ -1058,6 +1145,10 @@ function respondBlock(e) {
     const locked = e.closed || e.status === "cancelled";
     const showQ = order || st.status === "going";
     let h = "";
+    if (S.me && S.me.role === "guest") {
+      if (st.gname === undefined) { st.gname = (e.mine && e.mine.answers && e.mine.answers._guest && e.mine.answers._guest.name) || ""; try { if (!st.gname) st.gname = localStorage.getItem("xv-gname") || ""; } catch (x) {} }
+      h += `<div class="card fm" style="text-align:left"><b>Your name</b><input data-gname value="${esc(st.gname)}" maxlength="80" placeholder="Full name"${locked ? " disabled" : ""}></div>`;
+    }
     if (!order) h += `<div class="card" style="text-align:left"><b>Are you coming?</b>${e.deadline ? `<p style="margin:2px 0 8px">${locked ? "RSVP closed" : "Reply by " + esc(closesText(e))}</p>` : ""}
       <div class="seg2 big"><button class="${st.status === "going" ? "on" : ""}" data-rs="going"${locked ? " disabled" : ""}>Going</button><button class="${st.status === "not" ? "on" : ""}" data-rs="not"${locked ? " disabled" : ""}>Not going</button></div></div>`;
     else h += `<div class="card" style="text-align:left"><b>${e.mine && e.mine.status === "ordered" ? "Your order" : "Place your order"}</b><p style="margin:2px 0 0">${locked ? "Orders closed" : "Closes " + esc(closesText(e))}${e.max ? ` · max ${e.max} per person` : ""}</p></div>`;
@@ -1076,7 +1167,9 @@ function respondBar(e, st) {
   const order = e.kind === "order";
   const t = (order || st.status === "going") ? liveTotal(e, st.a) : 0;
   const label = order ? (e.mine && e.mine.status === "ordered" ? "Update order" : "Submit order") : (e.mine && e.mine.status ? "Update my RSVP" : "Save my RSVP");
-  return `<div class="evbar" style="flex-direction:column;align-items:stretch">${t && (order || e.pay) ? `<div style="text-align:center;font-size:13px;color:var(--muted)">Total <b style="color:var(--ink)">${money(t)}</b></div>` : ""}<button class="btn rose" data-rsave${!order && !st.status ? " disabled" : ""}>${label}</button></div>`;
+  if (S.preview) return `<div class="evbar"><button class="btn ghost" disabled>Preview only · answers aren't saved</button></div>`;
+  const consent = S.me && S.me.role === "guest" ? `<p class="consent">By registering, you agree that EXO may use your name and email to contact you about this event and future EXO events or opportunities. You may request for consent withdrawal at any time.</p>` : "";
+  return `<div class="evbar" style="flex-direction:column;align-items:stretch">${consent}${t && (order || e.pay) ? `<div style="text-align:center;font-size:13px;color:var(--muted)">Total <b style="color:var(--ink)">${money(t)}</b></div>` : ""}<button class="btn rose" data-rsave${!order && !st.status ? " disabled" : ""}>${label}</button></div>`;
 }
 async function sendProof(e, file) {
   const r = await call("proofstart", { id: e.id, mime: file.type || "image/jpeg", size: file.size });
@@ -1108,14 +1201,20 @@ function wireRespond(e, rb, redraw) {
       e.mine = r.mine; saveItems(); renderEvents(); openEvent(e.id); return toast("Order withdrawn");
     }
     if (b.dataset.rsave !== undefined) {
+      if (S.preview) return;
       b.disabled = true; b.innerHTML = LOADING;
       const body = e.kind === "order" ? { id: e.id, answers: st.a } : { id: e.id, status: st.status, answers: st.status === "going" ? st.a : {} };
+      if (S.me && S.me.role === "guest") {
+        if ((st.gname || "").trim().length < 2) { b.disabled = false; redraw(); return toast("Please add your name"); }
+        body.guest = { name: st.gname.trim(), consent: true }; body.ref = DEEP.ref || "";
+        try { localStorage.setItem("xv-gname", st.gname.trim()); } catch (x) {}
+      }
       let r = await call("respond", body).catch(() => ({}));
       if (!r.ok) {
         b.disabled = false;
         const q = (e.form || []).find(x => x.id === r.q);
         redraw();
-        return toast({ required: q ? `Please answer "${q.label}"` : "Please answer the required questions", over_max: `Max ${e.max} per person`, empty_order: "Please pick at least one item", closed: "Sorry, this has closed" }[r.error] || "Couldn't save. Try again");
+        return toast({ required: q ? `Please answer "${q.label}"` : "Please answer the required questions", over_max: `Max ${e.max} per person`, empty_order: "Please pick at least one item", closed: "Sorry, this has closed", guest_name: "Please add your name" }[r.error] || "Couldn't save. Try again");
       }
       e.mine = r.mine;
       if (st.file) { try { e.mine = await sendProof(e, st.file); st.file = null; } catch (err) { toast("Saved, but the screenshot didn't upload. Try again"); } }
@@ -1127,6 +1226,7 @@ function wireRespond(e, rb, redraw) {
     const t = ev.target;
     if (t.dataset.qn !== undefined) st.a[t.dataset.qn] = t.value === "" ? undefined : +t.value;
     if (t.dataset.qt !== undefined) st.a[t.dataset.qt] = t.value;
+    if (t.dataset.gname !== undefined) st.gname = t.value;
   };
   const onChange = ev => {
     if (ev.target.id !== "pfIn") return;
@@ -1156,7 +1256,7 @@ function openResults(e) {
     const going = r.rows.filter(x => x.status === "going" || x.status === "ordered"), not = r.rows.filter(x => x.status === "not");
     let view = "";
     const tiles = order ? [["Orders", going.length, "going"], ["No reply", r.noReply.length, "noreply"], ["Total", money(going.reduce((s, x) => s + x.total, 0)), ""], ["Withdrawn", 0, ""]].slice(0, 3)
-      : [["Going", going.length, "going"], ["Not going", not.length, "not"], ["No reply", r.noReply.length, "noreply"], ["Guests", 0, ""]];
+      : [["Going", going.length, "going"], ["Not going", not.length, "not"], ["No reply", r.noReply.length, "noreply"], ["Guests", r.rows.filter(x => x.guest).length, "guests"]];
     const summary = () => form.map(q => {
       let rows = [];
       if (q.type === "items") rows = q.options.map(o => [o.label, going.reduce((s, x) => s + (((x.answers[q.id] || {})[o.id]) || 0), 0)]);
@@ -1172,6 +1272,7 @@ function openResults(e) {
       let h = `<div class="tiles">${tiles.map(([l, n, k]) => `<button class="${view === k && k ? "on" : ""}" data-tv="${k}"${k ? "" : " disabled"}><b>${n}</b><span>${l}</span></button>`).join("")}</div>`;
       if (view === "going") h += people(going);
       else if (view === "not") h += people(not);
+      else if (view === "guests") h += `<div class="card" style="text-align:left">${r.rows.filter(x => x.guest).map(x => `<div class="rrow"><span>${esc(x.name.replace(/ \(Guest\)$/, ""))}<br><small>${esc(x.guest.email)}</small></span><span><small>${esc({ going: "Going", not: "Not going", ordered: "Ordered" }[x.status] || x.status)}<br>${x.guest.via ? "via " + esc(x.guest.via) : "direct"}</small></span></div>`).join("") || `<p style="margin:0">No guests yet.</p>`}</div>`;
       else if (view === "noreply") h += people(r.noReply) + `<div class="card"><button class="btn rose" data-exp>Export no-reply list</button><p style="margin:8px 0 0">Saved to the event's tab in EXO Event Attendance Collation</p></div>`;
       else h += summary() + pay;
       h += r.tab ? `<div class="card"><a class="btn ghost" href="${esc(r.tab)}" target="_blank" rel="noopener" style="text-decoration:none">Open the event's tab in Google Sheets</a></div>` : "";
@@ -1194,6 +1295,28 @@ function openResults(e) {
   }).catch(() => { const B = $("rsB"); if (B) B.innerHTML = `<div class="card"><p>Couldn't load the results. Try again.</p></div>`; });
 }
 
+/* ---------- all guests (core team): a simple prospect list ---------- */
+function openGuests() {
+  unwireRespond();
+  const P = $("evPage");
+  P.innerHTML = `<div class="evcover" style="min-height:110px"><button class="evback" data-gback aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><h2>Guests</h2><p>Everyone who registered as a guest</p></div><div class="evbody" id="gB"><div class="card"><p>${LOADING}</p></div></div>`;
+  P.hidden = false; P.scrollTop = 0; document.body.style.overflow = "hidden";
+  const load = () => call("guests").then(r => {
+    if (!r.ok) throw 0;
+    $("gB").innerHTML = r.guests.length ? r.guests.map(g => `<div class="card" style="text-align:left"><div style="display:flex;justify-content:space-between;gap:10px"><b>${esc(g.name)}</b><button class="linkbtn" data-grm="${esc(g.email)}" data-gname="${esc(g.name)}" style="color:var(--bad);font-size:13px">Remove</button></div>
+      <p style="margin:2px 0 6px">${esc(g.email)}${g.via.length ? " · via " + esc(g.via.join(", ")) : ""}</p>${g.events.map(x => `<span class="bdg g">${esc(x.t)} · ${esc({ going: "Going", not: "Not going", ordered: "Ordered", withdrawn: "Withdrawn" }[x.status] || x.status)}</span>`).join("")}</div>`).join("")
+      : `<div class="card"><p>No guests yet.</p></div>`;
+  }).catch(() => { $("gB").innerHTML = `<div class="card"><p>Couldn't load. Try again.</p></div>`; });
+  load();
+  P.onclick = ev => {
+    const b = ev.target.closest("button"); if (!b) return;
+    if (b.dataset.gback !== undefined) { closeEvent(); return; }
+    if (b.dataset.grm) {
+      if (!confirm(`Remove ${b.dataset.gname}'s details from every event? Use this when a guest asks to withdraw consent. This can't be undone.`)) return;
+      call("guestremove", { email: b.dataset.grm }).then(r => { if (!r.ok) throw 0; toast("Removed"); load(); }).catch(() => toast("Couldn't remove. Try again"));
+    }
+  };
+}
 /* ---------- reactions & comments ---------- */
 const QUICK = ["❤️", "😂", "😍", "👏", "🔥", "😮", "🥳", "🙏", "👍", "💯", "😢", "🤩"];
 function whoLine(it) {
@@ -1615,9 +1738,11 @@ document.addEventListener("click", e => {
   if (b.dataset.del !== undefined) return deleteItem(b);
   if (b.dataset.upretry !== undefined) { const row = b.closest(".uprow"), job = row && row._job; if (job) { job.state = "waiting"; job.retry = false; upRow(job); UP.queue.push(job); runUploads(); } return; }
   if (b.dataset.tab) {
-    if (b.dataset.tab === "memories") return toast("Memories are coming soon");
+    if (b.dataset.tab === "memories") return toast(S.me && S.me.role === "guest" ? "Memories are for EXOians" : "Memories are coming soon");
     return showTab(b.dataset.tab);
   }
+  if (b.dataset.talk !== undefined) return talkSheet();
+  if (b.dataset.guests !== undefined) return openGuests();
   if (b.dataset.evnew !== undefined) return openBuilder(null);
   if (b.dataset.ordnew !== undefined) return openBuilder(null, "order");
   if (b.dataset.ev && b.classList.contains("evc")) return openEvent(b.dataset.ev);
