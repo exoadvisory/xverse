@@ -145,6 +145,48 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
 .mlist button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #f1ece4;background:none;padding:9px 12px;font-size:15px;cursor:pointer}
 .resolve .acct{font-size:18px;font-weight:700;margin:6px 0 12px;word-break:break-all}
 .resolve .sug{background:#f6efe9;border-radius:12px;padding:12px;margin:10px 0}
+nav.tabs .ndot{position:absolute;top:0;left:calc(50% + 8px);width:8px;height:8px;border-radius:50%;background:var(--rose)}
+.tsearch{position:relative;margin-bottom:8px}
+.tsearch input{width:100%;font:inherit;font-size:16px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+.hits{position:absolute;left:0;right:0;top:44px;z-index:5;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:240px;overflow-y:auto}
+.hits button{display:flex;justify-content:space-between;width:100%;border:0;border-bottom:1px solid #f1ece4;background:none;padding:10px 12px;font-size:15px;cursor:pointer;text-align:left}
+.hits small{color:var(--muted)}
+.chip.ev{background:#f3e6e2;color:var(--rose2);border-color:#ecd5cf}.chip.ev.on{background:var(--rose2);color:#fff}
+.vtags .e{font:inherit;font-size:12px;border:0;border-radius:999px;padding:3px 9px;background:rgba(232,161,151,.35);color:#fff;cursor:pointer}
+.evhead{display:flex;justify-content:space-between;align-items:center;margin:4px 2px 10px}
+.evhead h2{margin:0;font-size:18px}
+.evsec{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:16px 2px 8px}
+.evc{display:flex;gap:12px;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:16px;padding:10px 12px;margin-bottom:8px;cursor:pointer;font:inherit;color:inherit}
+.evc .dt{flex:none;width:50px;text-align:center;border-radius:12px;background:linear-gradient(160deg,#2f3240,#7a5c66);color:#fff;padding:6px 0}
+.evc .dt b{display:block;font-size:19px;line-height:1.1}.evc .dt small{font-size:11px;letter-spacing:.5px;text-transform:uppercase;opacity:.85}
+.evc .tx{flex:1;min-width:0}.evc .tx b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.evc .tx small{color:var(--muted);font-size:12.5px}
+.bdg{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;background:#f3e6e2;color:var(--rose2);margin:3px 4px 0 0}
+.bdg.g{background:#efe9e0;color:var(--muted)}.bdg.x{background:#fbeaea;color:var(--bad)}
+details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:700;margin:14px 2px 8px;list-style:none}
+.evpage{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto;padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+.evcover{position:relative;min-height:170px;padding:calc(54px + env(safe-area-inset-top)) 16px 16px;color:#fff;background:linear-gradient(135deg,#2f3240,#7a5c66 60%,#c4877f);display:flex;flex-direction:column;justify-content:flex-end}
+.evcover .bdg{background:rgba(255,255,255,.22);color:#fff;align-self:flex-start}
+.evcover h2{margin:6px 0 2px;font-size:22px}.evcover p{margin:0;opacity:.9;font-size:14px}
+.evback{position:absolute;top:calc(10px + env(safe-area-inset-top));left:10px;border:0;background:rgba(0,0,0,.25);color:#fff;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.evbody{max-width:640px;margin:0 auto;padding:14px}
+.evtag{display:inline-block;background:#f3e6e2;color:var(--rose2);border-radius:999px;padding:4px 10px;font-size:12.5px;font-weight:700}
+.calbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;font-weight:700;margin-top:12px;cursor:pointer;font-size:14px}
+.egrid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:8px}
+.egrid button{aspect-ratio:1;border:0;padding:0;background:#e3dbd0;border-radius:6px;overflow:hidden;cursor:pointer}.egrid img{width:100%;height:100%;object-fit:cover;display:block}
+.evbar{position:fixed;left:0;right:0;bottom:0;z-index:41;background:rgba(255,253,249,.97);border-top:1px solid var(--line);padding:10px 14px calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;justify-content:center}
+.evbar .btn{flex:1;max-width:420px;border-radius:14px;padding:13px}
+.fm label{display:block;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin:12px 0 6px}
+.fm input,.fm textarea,.fm select{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+.fm textarea{min-height:70px;resize:vertical}
+.fm .two{display:flex;gap:8px}.fm .two>*{flex:1}
+.seg2{display:flex;gap:6px;flex-wrap:wrap}.seg2 button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer}
+.seg2 button.on{background:var(--ink);color:#fff;border-color:var(--ink)}.seg2 button:disabled{opacity:.45}
+.swr{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.sw{width:44px;height:26px;border-radius:13px;background:#d9d3ca;position:relative;border:0;cursor:pointer;flex:none}.sw::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.sw.on{background:var(--rose2)}.sw.on::after{left:21px}
+.ferr{color:var(--bad);font-size:13px;margin-top:6px}
+.plist label{display:flex;justify-content:space-between;align-items:center;margin:0;padding:9px 12px;border-bottom:1px solid #f1ece4;font-size:15px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:400}
+.plist label input{width:20px;height:20px;flex:none;accent-color:var(--ink)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 </style>
 </head>
@@ -166,6 +208,7 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
         <input type="file" id="cam" accept="image/*,video/*" capture="environment" hidden>
       </div>
       <div id="queue" class="q"></div>
+      <div class="tsearch"><input id="tagQ" placeholder="Search tags, e.g. cedli" autocomplete="off" autocapitalize="none"><div class="hits" id="tagHits" hidden></div></div>
       <div class="chips" id="chips"></div>
       <p class="count" id="count"></p>
       <div class="grid" id="grid"></div>
@@ -173,16 +216,17 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
       <p class="foot" id="foot"></p>
     </div>
   </section>
-  <section id="tab-events" hidden><div class="card soon"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2 2 4-4"/></svg></div><h3>Events are coming soon</h3><p>Register for EXO events right here.</p></div></section>
+  <section id="tab-events" hidden><div id="evList"></div></section>
   <section id="tab-memories" hidden><div class="card soon"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.9.4-3.7 3.2 1.1 4.8L12 13.9l-4.2 2.6 1.1-4.8-3.7-3.2 4.9-.4z"/><path d="M5 20.5h14"/></svg></div><h3>Memories are coming soon</h3><p>Monthly highlights and yearly EXO Memory cards.</p></div></section>
 </main>
 
 <nav class="tabs"><div class="row">
   <button class="on" data-tab="moments"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/></svg>Moments</button>
-  <button class="dim" data-tab="events"><span class="soonlbl">Soon</span><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2 2 4-4"/></svg>Events</button>
+  <button data-tab="events"><span class="ndot" id="evDot" hidden></span><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2 2 4-4"/></svg>Events</button>
   <button class="dim" data-tab="memories"><span class="soonlbl">Soon</span><svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.9.4-3.7 3.2 1.1 4.8L12 13.9l-4.2 2.6 1.1-4.8-3.7-3.2 4.9-.4z"/><path d="M5 20.5h14"/></svg>Memories</button>
 </div></nav>
 
+<div class="evpage" id="evPage" hidden></div>
 <div class="viewer" id="viewer" hidden>
   <div class="vtop">
     <button class="vbtn" id="vClose" aria-label="Close"><svg class="m" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
@@ -212,7 +256,7 @@ const XV = {
   CHUNK: 8 * 1024 * 1024
 };
 const LOADING = `<span class="ldots">Loading<i>.</i><i>.</i><i>.</i></span>`;
-const S = { pass: null, me: null, people: [], items: null, comments: {}, seen: null, cut: 0, filter: { k: "all" }, gis: null, busy: false };
+const S = { pass: null, me: null, people: [], items: null, comments: {}, events: [], evLabels: {}, tab: "moments", seen: null, cut: 0, filter: { k: "all" }, gis: null, busy: false };
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const ICON = {
@@ -249,7 +293,7 @@ function loadPass() {
 }
 function savePass(p, exp) { try { p ? localStorage.setItem("xv-pass", JSON.stringify({ pass: p, exp })) : localStorage.removeItem("xv-pass"); } catch (e) {} }
 function wipeLocal() {
-  ["xv-pass", "xv-items", "xv-seen"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+  ["xv-pass", "xv-items", "xv-seen", "xv-evseen"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
   if (window.caches) caches.delete("xv-thumbs").catch(() => {});
   Object.keys(TH).forEach(k => delete TH[k]);
   S.pass = null; S.me = null; S.items = null; S.comments = {}; S.seen = null;
@@ -313,7 +357,7 @@ function openApp() {
   if (!S.pass) return showSignIn();
   let quiet = false;
   if (!S.items) {
-    try { const c = JSON.parse(localStorage.getItem("xv-items") || "null"); if (c && c.items) { S.me = c.me; S.people = c.people || []; S.items = c.items; S.comments = c.comments || {}; render(); quiet = true; } } catch (e) {}
+    try { const c = JSON.parse(localStorage.getItem("xv-items") || "null"); if (c && c.items) { S.me = c.me; S.people = c.people || []; S.items = c.items; S.comments = c.comments || {}; S.events = c.events || []; S.evLabels = c.evLabels || {}; render(); quiet = true; } } catch (e) {}
   }
   if (!quiet) status(`<div class="ico">${ICON.photo}</div><h3>Opening Moments…</h3>`);
   call("open").then(r => {
@@ -323,13 +367,14 @@ function openApp() {
       throw new Error(r.error);
     }
     S.me = r.me; S.people = r.people || []; S.items = r.items || []; S.comments = r.comments || {};
+    S.events = r.events || []; S.evLabels = r.evLabels || {};
     saveItems();
     render();
   }).catch(() => { if (!quiet) offline(openApp); });
 }
 
 /* ---------- what's new for me (kept on this phone) ---------- */
-function saveItems() { try { localStorage.setItem("xv-items", JSON.stringify({ me: S.me, people: S.people, items: S.items, comments: S.comments })); } catch (e) {} }
+function saveItems() { try { localStorage.setItem("xv-items", JSON.stringify({ me: S.me, people: S.people, items: S.items, comments: S.comments, events: S.events, evLabels: S.evLabels })); } catch (e) {} }
 const ms = iso => Date.parse(iso) || 0;
 function seen() {
   if (!S.seen) {
@@ -355,6 +400,7 @@ function filtered() {
   if (f.k === "me") return it.filter(x => S.me && x.people.includes(S.me.name));
   if (f.k === "mine") return it.filter(x => x.mine);
   if (f.k === "tag") return it.filter(x => x.tags.includes(f.v));
+  if (f.k === "event") return it.filter(x => x.ev === f.v);
   if (f.k === "person") return it.filter(x => x.people.includes(f.v));
   return it;
 }
@@ -364,9 +410,13 @@ function render() {
   $("upbar").hidden = !me.canUpload;
   $("vonly").hidden = me.canUpload !== false;
   // filter chips: All · Photos of me · My uploads · People · top hashtags
-  const tagCount = {};
-  (S.items || []).forEach(x => x.tags.forEach(t => tagCount[t] = (tagCount[t] || 0) + 1));
+  // only recent tags as chips (used in the last 30 days); older ones are found with the search box
+  const cutoff = Date.now() - 30 * 864e5, tagCount = {};
+  (S.items || []).forEach(x => { if (ms(x.at) >= cutoff) x.tags.forEach(t => tagCount[t] = (tagCount[t] || 0) + 1); });
   const tops = Object.keys(tagCount).sort((a, b) => tagCount[b] - tagCount[a] || a.localeCompare(b)).slice(0, 12);
+  const evHas = {};
+  (S.items || []).forEach(x => { if (x.ev) evHas[x.ev] = (evHas[x.ev] || 0) + 1; });
+  const curEv = Object.keys(evHas).filter(id => S.evLabels[id] && ms(S.evLabels[id].at) >= cutoff).sort((a, b) => ms(S.evLabels[b].at) - ms(S.evLabels[a].at));
   const f = S.filter, on = (k, v) => f.k === k && (v === undefined || f.v === v) ? " on" : "";
   let chips = `<button class="chip${on("all")}" data-f="all">All</button>`;
   const nNew = (S.items || []).filter(isNew).length;
@@ -375,8 +425,11 @@ function render() {
   if (me.canUpload) chips += `<button class="chip${on("mine")}" data-f="mine">My uploads</button>`;
   chips += f.k === "person" ? `<button class="chip on" data-f="all">${ICON.person}${esc(alias(f.v))} ×</button>` : `<button class="chip" data-people>${ICON.person}People</button>`;
   if (f.k === "tag" && !tops.includes(f.v)) tops.unshift(f.v);
+  if (f.k === "event" && !curEv.includes(f.v)) curEv.unshift(f.v);
+  chips += curEv.map(id => `<button class="chip ev${on("event", id)}" data-f="event" data-v="${esc(id)}">#${esc((S.evLabels[id] || {}).tag || "event")}</button>`).join("");
   chips += tops.map(t => `<button class="chip${on("tag", t)}" data-f="tag" data-v="${esc(t)}">#${esc(t)}</button>`).join("");
   $("chips").innerHTML = chips;
+  evDot();
 
   const list = filtered();
   const v = list.filter(x => x.video).length, p = list.length - v;
@@ -495,7 +548,8 @@ function showItem() {
   viewerBits(it);
 }
 function viewerBits(it) {
-  $("vTags").innerHTML = it.people.map(n => `<span class="${isPerson(n) ? "" : "gone"}">${esc(alias(n))}</span>`).join("") + it.tags.map(t => `<span class="h">#${esc(t)}</span>`).join("");
+  const evl = it.ev && S.evLabels[it.ev];
+  $("vTags").innerHTML = (evl ? `<button class="e" data-evf="${esc(it.ev)}">#${esc(evl.tag || evl.t)}</button>` : "") + it.people.map(n => `<span class="${isPerson(n) ? "" : "gone"}">${esc(alias(n))}</span>`).join("") + it.tags.map(t => `<span class="h">#${esc(t)}</span>`).join("");
   const mb = it.size ? ` · ${(it.size / 1048576).toFixed(it.size > 10485760 ? 0 : 1)} MB` : "";
   $("vAct").innerHTML = (it.video ? "" : `<button class="vbtn" data-hd>${ICON.hd}<span>View HD</span></button>`)
     + `<button class="vbtn" data-dl>${ICON.dl}<span>Save HD${mb}</span></button>`
@@ -584,6 +638,253 @@ function deleteItem(btn) {
     S.items = S.items.filter(x => x.id !== it.id);
     closeViewer(); render(); toast("Deleted");
   }).catch(() => { btn.disabled = false; toast("Couldn't delete. Try again"); });
+}
+
+/* ---------- events ---------- */
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const sgParts = iso => { const d = new Date(new Date(iso).getTime() + 8 * 3600e3); return { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(), hh: d.getUTCHours(), mm: d.getUTCMinutes(), wd: d.getUTCDay() }; };
+const pad2 = n => String(n).padStart(2, "0");
+const fmtTime = p => `${p.hh % 12 || 12}${p.mm ? ":" + pad2(p.mm) : ""}${p.hh < 12 ? "am" : "pm"}`;
+function whenText(e) {
+  const s = sgParts(e.start), en = sgParts(e.end || e.start), wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][s.wd];
+  const day = `${wd} ${s.d} ${MON[s.m]} ${s.y}`;
+  if (e.allDay) return day;
+  return `${day} · ${fmtTime(s)}${(en.hh !== s.hh || en.mm !== s.mm) ? "–" + fmtTime(en) : ""}`;
+}
+const evLabel = id => { const e = S.events.find(x => x.id === id); return e ? { t: e.title, tag: e.tag, at: e.start } : null; };
+// Events this person can add photos to, recent ones first (plus the one already chosen)
+function uploadableEvents(keep) {
+  const cut = Date.now() - 60 * 864e5;
+  return S.events.filter(e => e.canUpload && e.album && e.status !== "cancelled" && (ms(e.end || e.start) >= cut || e.id === keep))
+    .sort((a, b) => ms(b.start) - ms(a.start));
+}
+// "new" dot on the Events tab: events shown to FCs that changed since you last opened the tab
+function evSeenAt() {
+  let v = 0; try { v = +localStorage.getItem("xv-evseen") || 0; } catch (e) {}
+  if (!v) { v = Date.now(); try { localStorage.setItem("xv-evseen", String(v)); } catch (e) {} }
+  return v;
+}
+function evDot() {
+  const seenAt = evSeenAt();
+  $("evDot").hidden = S.tab === "events" || !S.events.some(e => e.status !== "cancelled" && e.see !== "hidden" && ms(e.updatedAt) > seenAt);
+}
+function showTab(t) {
+  S.tab = t;
+  ["moments", "events"].forEach(x => { $("tab-" + x).hidden = x !== t; });
+  document.querySelectorAll("nav.tabs button[data-tab]").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  if (t === "events") { try { localStorage.setItem("xv-evseen", String(Date.now())); } catch (e) {} renderEvents(); }
+  evDot();
+  window.scrollTo(0, 0);
+}
+function evCard(e) {
+  const p = sgParts(e.start), core = S.me && S.me.core;
+  const badges = (e.invited ? `<span class="bdg">You're invited</span>` : "")
+    + (core && e.see === "hidden" ? `<span class="bdg g">Hidden</span>` : "")
+    + (core && e.see === "invitees" ? `<span class="bdg g">Invitees · ${e.people.length}</span>` : "")
+    + (core && e.see === "groups" ? `<span class="bdg g">${e.groups.map(g => g[0].toUpperCase() + g.slice(1)).join(" · ")}</span>` : "")
+    + (e.status === "cancelled" ? `<span class="bdg x">Cancelled</span>` : "")
+    + (e.photos ? `<span class="bdg g">${e.photos} photo${e.photos > 1 ? "s" : ""}</span>` : "");
+  return `<button class="evc" data-ev="${esc(e.id)}"><span class="dt"><b>${p.d}</b><small>${MON[p.m]}</small></span>
+    <span class="tx"><b>${esc(e.title)}</b><small>${esc(whenText(e).replace(/^\w+ \d+ \w+ \d+ · /, ""))}${e.venue ? " · " + esc(e.venue) : ""}</small><br>${badges}</span></button>`;
+}
+function renderEvents() {
+  const core = S.me && S.me.core, now = Date.now();
+  const live = S.events.filter(e => e.status !== "cancelled");
+  const shown = e => !core || e.see !== "hidden";
+  const up = live.filter(e => ms(e.end || e.start) >= now - 12 * 3600e3 && shown(e));
+  const past = live.filter(e => ms(e.end || e.start) < now - 12 * 3600e3 && shown(e)).reverse();
+  const hidden = core ? live.filter(e => e.see === "hidden" && ms(e.end || e.start) >= now - 12 * 3600e3) : [];
+  const cancelled = core ? S.events.filter(e => e.status === "cancelled") : [];
+  let h = `<div class="evhead"><h2>Events</h2>${core ? `<button class="btn rose" data-evnew style="padding:9px 14px">+ New event</button>` : ""}</div>`;
+  h += up.length ? `<div class="evsec">Upcoming</div>` + up.map(evCard).join("") : `<div class="card"><p>No upcoming events right now.</p></div>`;
+  if (hidden.length) h += `<details class="more2"><summary>From the calendar, not shown to FCs · ${hidden.length} ›</summary>${hidden.map(evCard).join("")}</details>`;
+  if (past.length) h += `<details class="more2"><summary>Past events · ${past.length} ›</summary>${past.map(evCard).join("")}</details>`;
+  if (cancelled.length) h += `<details class="more2"><summary>Cancelled · ${cancelled.length} ›</summary>${cancelled.map(evCard).join("")}</details>`;
+  $("evList").innerHTML = h;
+}
+// Add to my calendar: a calendar file the phone opens in its own calendar app
+function icsFor(e) {
+  const f = iso => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const day = iso => { const p = sgParts(iso); return `${p.y}${pad2(p.m + 1)}${pad2(p.d)}`; };
+  const escI = t => String(t || "").replace(/[\\,;]/g, m => "\\" + m).replace(/\n/g, "\\n");
+  const when = e.allDay ? `DTSTART;VALUE=DATE:${day(e.start)}\r\nDTEND;VALUE=DATE:${day(new Date(ms(e.start) + 864e5).toISOString())}` : `DTSTART:${f(e.start)}\r\nDTEND:${f(e.end || e.start)}`;
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Xverse//EXO//EN", "BEGIN:VEVENT", `UID:${e.id}@xverse`, `DTSTAMP:${f(new Date().toISOString())}`, when,
+    `SUMMARY:${escI(e.title)}`, e.venue ? `LOCATION:${escI(e.venue)}` : "", e.note ? `DESCRIPTION:${escI(e.note)}` : "", "END:VEVENT", "END:VCALENDAR"].filter(Boolean).join("\r\n");
+}
+function addToCalendar(e) {
+  const blob = new Blob([icsFor(e)], { type: "text/calendar" }), url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = (e.tag || "event") + ".ics"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function closeEvent() { $("evPage").hidden = true; $("evPage").innerHTML = ""; document.body.style.overflow = ""; }
+function openEvent(id) {
+  const e = S.events.find(x => x.id === id); if (!e) return;
+  const core = S.me && S.me.core;
+  const photos = (S.items || []).filter(x => x.ev === id);
+  const badge = e.status === "cancelled" ? "Cancelled" : e.invited ? "You're invited" : core && e.see === "hidden" ? "Hidden from FCs" : "";
+  const P = $("evPage");
+  P.innerHTML = `<div class="evcover"><button class="evback" data-evclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    ${badge ? `<span class="bdg">${esc(badge)}</span>` : ""}<h2>${esc(e.title)}</h2><p>${esc(whenText(e))}${e.venue ? " · " + esc(e.venue) : ""}</p></div>
+    <div class="evbody">
+      <div class="card" style="text-align:left">${e.tag ? `<span class="evtag">#${esc(e.tag)}</span>` : ""}
+        ${e.note ? `<p style="white-space:pre-wrap;color:var(--ink);font-size:14px;margin:10px 0 0">${esc(e.note)}</p>` : ""}
+        <button class="calbtn" data-evics><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>Add to my calendar</button></div>
+      ${e.album ? `<div class="card" style="text-align:left"><div style="display:flex;justify-content:space-between"><b>Event album · ${photos.length}</b>${photos.length ? `<button class="linkbtn" data-evf="${esc(id)}">See all ›</button>` : ""}</div>
+        ${photos.length ? `<div class="egrid">${photos.slice(0, 8).map(x => `<button data-evph="${esc(x.id)}"><img alt=""></button>`).join("")}</div>` : `<p style="margin:8px 0 0">No photos yet.</p>`}</div>` : ""}
+      ${core ? `<div class="card" style="text-align:left"><b>Core team</b><p style="margin:6px 0 0">${e.cal ? "Linked with the EXO Calendar of Events." : "Not in the EXO Calendar of Events."}${e.recurring ? " Repeating entry: edit its date in the calendar." : ""}</p>
+        <div class="btns" style="justify-content:flex-start"><button class="btn ghost" data-evedit>Edit</button>${e.status === "cancelled" ? `<button class="btn ghost" data-evundo>Restore</button>` : `<button class="btn ghost" data-evcancel style="color:var(--bad)">Cancel this event</button>`}</div></div>` : ""}
+    </div>
+    ${e.canUpload && e.album && e.status !== "cancelled" ? `<div class="evbar"><button class="btn rose" data-evadd>Add photos to this event</button></div>` : ""}`;
+  P.hidden = false; P.scrollTop = 0; document.body.style.overflow = "hidden";
+  P.querySelectorAll("[data-evph]").forEach(b => {
+    const pid = b.dataset.evph, img = b.querySelector("img"), u = TH[pid + "|400"];
+    if (u) setImg(img, u); else getThumbs([pid], 400).then(() => TH[pid + "|400"] && setImg(img, TH[pid + "|400"]));
+  });
+  P.onclick = ev => {
+    const b = ev.target.closest("button"); if (!b) return;
+    if (b.dataset.evclose !== undefined) return closeEvent();
+    if (b.dataset.evics !== undefined) return addToCalendar(e);
+    if (b.dataset.evadd !== undefined) { UP.preset = id; return $("pick").click(); }
+    if (b.dataset.evph) { closeEvent(); S.filter = { k: "event", v: id }; showTab("moments"); render(); const i = filtered().findIndex(x => x.id === b.dataset.evph); return openViewer(Math.max(0, i)); }
+    if (b.dataset.evedit !== undefined) return openBuilder(e);
+    if (b.dataset.evcancel !== undefined || b.dataset.evundo !== undefined) {
+      const undo = b.dataset.evundo !== undefined;
+      if (!undo && !confirm("Cancel this event? FCs won't see it any more. Photos and the calendar entry are kept.")) return;
+      call("eventcancel", { id, undo }).then(r => { if (!r.ok) throw 0; e.status = undo ? "active" : "cancelled"; saveItems(); openEvent(id); renderEvents(); toast(undo ? "Restored" : "Cancelled"); })
+        .catch(() => toast("Couldn't save. Try again"));
+    }
+  };
+}
+// Suggested tag: words joined (Nov Anniversary Lunch → NovAnniversaryLunch) + the year; + the month if the title has none
+function suggestTag(title, dateStr) {
+  const words = String(title || "").replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
+  let t = words.map(w => /^[A-Z0-9]+$/.test(w) ? w : w[0].toUpperCase() + w.slice(1)).join("");
+  const d = dateStr ? new Date(dateStr + "T12:00:00+08:00") : new Date();
+  const y = String(d.getFullYear()), mon = MON[d.getMonth()];
+  const hasMonth = MON.some(m => new RegExp("^" + m, "i").test(t) || words.some(w => w.toLowerCase().startsWith(m.toLowerCase())));
+  if (!/(19|20)\d\d/.test(t)) t += y + (hasMonth ? "" : mon);
+  return t.slice(0, 40);
+}
+const sgDateStr = iso => { const p = sgParts(iso); return `${p.y}-${pad2(p.m + 1)}-${pad2(p.d)}`; };
+const sgTimeStr = iso => { const p = sgParts(iso); return `${pad2(p.hh)}:${pad2(p.mm)}`; };
+function openBuilder(e) {
+  const isNew = !e;
+  const f = e ? Object.assign({}, e, { groups: (e.groups || []).slice(), people: (e.people || []).slice() })
+    : { title: "", start: new Date(Date.now() + 7 * 864e5).toISOString(), end: "", allDay: false, venue: "", note: "", see: "groups", groups: ["core", "xcademy"], people: [], album: true, tag: "", cal: true };
+  let date = sgDateStr(f.start), t1 = f.allDay ? "10:00" : sgTimeStr(f.start), t2 = f.allDay || !f.end ? "" : sgTimeStr(f.end);
+  let tagTouched = !!f.tag, calOn = isNew ? true : !!f.cal;
+  const P = $("evPage");
+  const draw = err => {
+    P.innerHTML = `<div class="evcover" style="min-height:110px"><button class="evback" data-bclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+      <h2>${isNew ? "New event" : "Set up event"}</h2>${f.cal && !isNew ? `<p>From the EXO Calendar of Events · edits sync both ways</p>` : ""}</div>
+      <div class="evbody fm">
+        <div class="card" style="text-align:left"><b>1 · Details</b>
+          <label>Title</label><input id="bT" value="${esc(f.title)}" maxlength="120">
+          <label>Date</label><input id="bD" type="date" value="${date}"${f.recurring ? " disabled" : ""}>
+          <div class="swr"><span>All day</span><button class="sw${f.allDay ? " on" : ""}" data-bsw="allDay"></button></div>
+          ${f.allDay ? "" : `<div class="two"><div><label>Starts</label><input id="bS" type="time" value="${t1}"></div><div><label>Ends</label><input id="bE" type="time" value="${t2}"></div></div>`}
+          <label>Venue</label><input id="bV" value="${esc(f.venue)}" maxlength="200">
+          <label>Note</label><textarea id="bN" maxlength="1000">${esc(f.note)}</textarea></div>
+        <div class="card" style="text-align:left"><b>2 · Who can see it</b><div class="seg2" style="margin-top:8px">
+            ${["hidden", "groups", "invitees"].map(k => `<button data-bsee="${k}" class="${f.see === k ? "on" : ""}">${{ hidden: "Hidden", groups: "Groups", invitees: "Invitees" }[k]}</button>`).join("")}</div>
+          ${f.see === "groups" ? `<div class="seg2" style="margin-top:10px">${[["core", "Core"], ["xcademy", "Xcademy"], ["candidate", "Candidates"]].map(([k, l]) => `<button data-bgrp="${k}" class="${f.groups.includes(k) ? "on" : ""}">${l}</button>`).join("")}</div>` : ""}
+          ${f.see === "invitees" ? `<div class="swr"><span>${f.people.length} ${f.people.length === 1 ? "person" : "people"} selected</span><button class="linkbtn" data-binv>Edit ›</button></div>` : ""}
+          ${f.see === "hidden" ? `<p style="margin:8px 0 0">Only the core team sees it.</p>` : ""}</div>
+        <div class="card" style="text-align:left"><b>3 · What people do</b><div class="seg2" style="margin-top:8px"><button class="on">FYI</button><button disabled>RSVP · soon</button></div></div>
+        <div class="card" style="text-align:left"><b>4 · Album</b>
+          <div class="swr"><span>Event album</span><button class="sw${f.album ? " on" : ""}" data-bsw="album"></button></div>
+          ${f.album ? `<p style="margin:0">${f.see === "invitees" ? "The invitees and the core team can add photos." : f.see === "groups" ? "Everyone in those groups can add photos." : "Only the core team can add photos."} Everyone can view them.</p>` : ""}
+          <label>Tag (must include the year)</label><input id="bTag" value="${esc(f.tag)}" placeholder="e.g. NovAnniversaryLunch2026" autocapitalize="none">
+          ${err ? `<div class="ferr">${esc(err)}</div>` : ""}</div>
+        <div class="card" style="text-align:left"><div class="swr"><span>Show in EXO Calendar of Events</span>${!isNew && e.cal ? `<span class="muted" style="font-size:13px">Linked</span>` : `<button class="sw${calOn ? " on" : ""}" data-bsw="cal"></button>`}</div></div>
+      </div>
+      <div class="evbar"><button class="btn rose" data-bsave>${isNew ? "Save event" : "Save changes"}</button></div>`;
+    P.hidden = false; document.body.style.overflow = "hidden";
+    const T = $("bT"), TG = $("bTag");
+    T.oninput = () => { f.title = T.value; if (!tagTouched) TG.value = f.tag = f.title ? suggestTag(f.title, $("bD").value) : ""; };
+    $("bD").onchange = () => { date = $("bD").value; if (!tagTouched && f.title) TG.value = f.tag = suggestTag(f.title, date); };
+    TG.oninput = () => { tagTouched = true; f.tag = TG.value.replace(/[^A-Za-z0-9]/g, ""); };
+    if (!f.tag && f.title) TG.value = f.tag = suggestTag(f.title, date);
+  };
+  const grab = () => {
+    f.title = $("bT").value.trim(); date = $("bD").value; f.venue = $("bV").value.trim(); f.note = $("bN").value.trim(); f.tag = $("bTag").value.replace(/[^A-Za-z0-9]/g, "");
+    if (!f.allDay) { t1 = $("bS").value || "10:00"; t2 = $("bE").value; }
+  };
+  draw();
+  P.onclick = ev => {
+    const b = ev.target.closest("button"); if (!b) return;
+    if (b.dataset.bclose !== undefined) return e ? openEvent(e.id) : closeEvent();
+    if (b.dataset.bsw) { grab(); if (b.dataset.bsw === "cal") calOn = !calOn; else f[b.dataset.bsw] = !f[b.dataset.bsw]; return draw(); }
+    if (b.dataset.bsee) { grab(); f.see = b.dataset.bsee; if (f.see === "invitees" && !f.people.length) return draw(), invitePicker(f, draw); return draw(); }
+    if (b.dataset.bgrp) { grab(); const g = b.dataset.bgrp; f.groups = f.groups.includes(g) ? f.groups.filter(x => x !== g) : f.groups.concat(g); return draw(); }
+    if (b.dataset.binv !== undefined) { grab(); return invitePicker(f, draw); }
+    if (b.dataset.bsave !== undefined) {
+      grab();
+      if (!f.title) return draw("Please add a title.");
+      if (!date) return draw("Please pick a date.");
+      if ((f.album || f.tag) && !/(19|20)\d\d/.test(f.tag)) return draw("The tag needs the year, e.g. " + suggestTag(f.title, date) + ".");
+      if (f.see === "groups" && !f.groups.length) return draw("Pick at least one group, or choose Hidden.");
+      if (f.see === "invitees" && !f.people.length) return draw("Pick the invitees first.");
+      const start = f.allDay ? `${date}T00:00:00+08:00` : `${date}T${t1}:00+08:00`;
+      const end = f.allDay ? start : `${date}T${t2 || t1}:00+08:00`;
+      b.disabled = true;
+      call("eventsave", { event: { id: e ? e.id : "", title: f.title, start, end, allDay: f.allDay, venue: f.venue, note: f.note, see: f.see, groups: f.groups, people: f.people, rule: f.rule || null, album: f.album, tag: f.tag, cal: calOn } })
+        .then(r => {
+          if (!r.ok) { b.disabled = false; return draw({ tag_year: "The tag needs the year.", tag_taken: "That tag is already used by another event. Please change it.", tag_missing: "Please add a tag for the album.", title: "Please add a title.", date: "Please pick a date." }[r.error] || "Couldn't save. Try again."); }
+          const i = S.events.findIndex(x => x.id === r.event.id);
+          const merged = Object.assign({}, i >= 0 ? S.events[i] : {}, r.event, { photos: i >= 0 ? S.events[i].photos : 0 });
+          if (i >= 0) S.events[i] = merged; else S.events.push(merged);
+          S.events.sort((a, c) => String(a.start).localeCompare(String(c.start)));
+          if (r.event.tag) S.evLabels[r.event.id] = { t: r.event.title, tag: r.event.tag, at: r.event.start };
+          saveItems(); renderEvents(); openEvent(r.event.id); toast("Saved");
+        }).catch(() => { b.disabled = false; draw("Couldn't reach Xverse. Try again."); });
+    }
+  };
+}
+// Invitees: suggest by group + anniversary/birthday month, then untick or add people by hand
+function invitePicker(f, after) {
+  const sel = new Set(f.people), rule = Object.assign({ groups: ["core team", "core"], basis: "anniversary", month: new Date().getMonth() + 1 }, f.rule || {});
+  const shade = sheet(`<h3>Who's invited</h3><p class="sub">Suggest by group and month, untick anyone who isn't coming, add extras.</p>
+    <div class="fm"><div class="seg2" id="ipG">${[["core team", "Core Team"], ["core", "Core"], ["xcademy", "Xcademy"]].map(([k, l]) => `<button data-g="${k}" class="${rule.groups.includes(k) ? "on" : ""}">${l}</button>`).join("")}</div>
+      <div class="two" style="margin-top:8px"><select id="ipB"><option value="anniversary"${rule.basis === "anniversary" ? " selected" : ""}>Anniversary month</option><option value="birthday"${rule.basis === "birthday" ? " selected" : ""}>Birthday month</option></select>
+      <select id="ipM">${MONTHS_FULL.map((m, i) => `<option value="${i + 1}"${rule.month === i + 1 ? " selected" : ""}>${m}</option>`).join("")}</select></div>
+      <div class="btns" style="justify-content:flex-start;margin-top:8px"><button class="btn ghost" id="ipGo">Suggest</button></div></div>
+    <label>Selected · <span id="ipN">0</span></label><div class="plist" id="ipL" style="max-height:34vh"></div>
+    <input id="ipQ" placeholder="Add someone by name" autocomplete="off" style="margin-top:8px;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;width:100%"><div class="plist" id="ipA" style="max-height:20vh" hidden></div>
+    <div class="btns"><button class="btn ghost" data-close>Cancel</button><button class="btn rose" id="ipOk">Done</button></div>`);
+  const L = shade.querySelector("#ipL"), A = shade.querySelector("#ipA"), Q = shade.querySelector("#ipQ");
+  const list = [...sel];
+  const drawL = () => {
+    L.innerHTML = list.map(n => `<label><span>${esc(alias(n))}</span><input type="checkbox" data-n="${esc(n)}"${sel.has(n) ? " checked" : ""}></label>`).join("") || `<p style="padding:10px;color:var(--muted);font-size:14px;margin:0">No one yet. Tap Suggest, or add by name.</p>`;
+    shade.querySelector("#ipN").textContent = sel.size;
+  };
+  drawL();
+  shade.querySelector("#ipG").onclick = ev => { const b = ev.target.closest("[data-g]"); if (!b) return; const g = b.dataset.g; rule.groups = rule.groups.includes(g) ? rule.groups.filter(x => x !== g) : rule.groups.concat(g); b.classList.toggle("on"); };
+  shade.querySelector("#ipGo").onclick = () => {
+    rule.basis = shade.querySelector("#ipB").value; rule.month = +shade.querySelector("#ipM").value;
+    call("suggest", rule).then(r => {
+      if (!r.ok) throw 0;
+      r.people.forEach(p => { if (!list.includes(p.n)) { list.push(p.n); sel.add(p.n); } });
+      drawL(); toast(r.people.length ? `${r.people.length} suggested` : "No one matches");
+    }).catch(() => toast("Couldn't load suggestions"));
+  };
+  L.onchange = ev => { const c = ev.target.closest("[data-n]"); if (c) { c.checked ? sel.add(c.dataset.n) : sel.delete(c.dataset.n); shade.querySelector("#ipN").textContent = sel.size; } };
+  Q.oninput = () => { const q = Q.value.trim().toLowerCase(); A.hidden = !q;
+    A.innerHTML = S.people.filter(p => q && (p.a.toLowerCase().includes(q) || p.n.toLowerCase().includes(q))).slice(0, 8).map(p => `<button data-add="${esc(p.n)}"><b>${esc(p.a)}</b><small>${p.a === p.n ? "" : esc(p.n)}</small></button>`).join(""); };
+  A.onclick = ev => { const b = ev.target.closest("[data-add]"); if (!b) return; const n = b.dataset.add; if (!list.includes(n)) list.push(n); sel.add(n); Q.value = ""; A.hidden = true; drawL(); };
+  shade.querySelector("#ipOk").onclick = () => { f.people = list.filter(n => sel.has(n)); f.rule = rule; shade.remove(); after(); };
+}
+// Tag search: every hashtag and event tag (old ones too), only when you type
+function tagSearch() {
+  const q = $("tagQ").value.trim().replace(/^#/, "").toLowerCase(), H = $("tagHits");
+  if (!q) { H.hidden = true; return; }
+  const cnt = {}, evc = {};
+  (S.items || []).forEach(x => { x.tags.forEach(t => cnt[t] = (cnt[t] || 0) + 1); if (x.ev) evc[x.ev] = (evc[x.ev] || 0) + 1; });
+  const hits = Object.keys(evc).filter(id => S.evLabels[id] && (S.evLabels[id].tag || "").toLowerCase().includes(q)).map(id => ({ k: "event", v: id, l: S.evLabels[id].tag, n: evc[id] }))
+    .concat(Object.keys(cnt).filter(t => t.includes(q)).map(t => ({ k: "tag", v: t, l: t, n: cnt[t] }))).slice(0, 20);
+  H.innerHTML = hits.map(h => `<button data-hk="${h.k}" data-hv="${esc(h.v)}"><span>#${esc(h.l)}</span><small>${h.n}</small></button>`).join("") || `<p style="padding:10px;margin:0;color:var(--muted);font-size:14px">No tag matches</p>`;
+  H.hidden = false;
 }
 
 /* ---------- reactions & comments ---------- */
@@ -691,12 +992,13 @@ function commentsSheet(it) {
 }
 
 /* ---------- tag sheet (upload batch or one photo) ---------- */
-function tagSheet({ title, sub, people, tags, okLabel, skipLabel }) {
+function tagSheet({ title, sub, people, tags, okLabel, skipLabel, event, events }) {
   return new Promise(done => {
     const sel = new Set(people || []), hs = [...(tags || [])];
     const shade = document.createElement("div"); shade.className = "shade";
     shade.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p class="sub">${esc(sub || "")}</p>
       <label>People</label><input id="tsQ" placeholder="Search names" autocomplete="off"><div class="picked" id="tsP"></div><div class="plist" id="tsL"></div>
+      ${events && events.length ? `<label>Event</label><select id="tsE"><option value="">No event</option>${events.map(e => `<option value="${esc(e.id)}"${e.id === event ? " selected" : ""}>${esc(e.title)} · ${esc(e.tag)}</option>`).join("")}</select>` : ""}
       <label>Hashtags</label><input id="tsH" placeholder="#cedli #teamlunch" autocomplete="off" autocapitalize="none"><div class="picked" id="tsHs"></div>
       <div class="btns">${skipLabel ? `<button class="btn ghost" data-ts="skip">${esc(skipLabel)}</button>` : `<button class="btn ghost" data-ts="cancel">Cancel</button>`}<button class="btn rose" data-ts="ok">${esc(okLabel)}</button></div></div>`;
     document.body.appendChild(shade);
@@ -725,7 +1027,8 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel }) {
       else if (b.dataset.rmh) { hs.splice(hs.indexOf(b.dataset.rmh), 1); draw(); }
       else if (b.dataset.ts) {
         addTags(); shade.remove();
-        done(b.dataset.ts === "cancel" ? null : b.dataset.ts === "skip" ? { people: [], tags: [] } : { people: [...sel], tags: hs });
+        const evSel = shade.querySelector("#tsE"), ev = evSel ? evSel.value : (event || "");
+        done(b.dataset.ts === "cancel" ? null : b.dataset.ts === "skip" ? { people: [], tags: [], event: ev } : { people: [...sel], tags: hs, event: ev });
       }
     });
     draw();
@@ -733,12 +1036,13 @@ function tagSheet({ title, sub, people, tags, okLabel, skipLabel }) {
 }
 async function editTags(btn) {
   const it = VW.list[VW.i];
-  const r = await tagSheet({ title: "Tag this " + (it.video ? "video" : "photo"), sub: "Who's in it, and what's it about?", people: it.people, tags: it.tags, okLabel: "Save" });
+  const evs = uploadableEvents(it.ev);
+  const r = await tagSheet({ title: "Tag this " + (it.video ? "video" : "photo"), sub: "Who's in it, and what's it about?", people: it.people, tags: it.tags, okLabel: "Save", event: it.ev || "", events: evs });
   if (!r) return;
   btn.disabled = true;
-  call("tag", { id: it.id, people: r.people, tags: r.tags }).then(x => {
+  call("tag", Object.assign({ id: it.id, people: r.people, tags: r.tags }, evs.length ? { event: r.event } : {})).then(x => {
     if (!x.ok) throw new Error(x.error);
-    it.people = x.people; it.tags = x.tags;
+    it.people = x.people; it.tags = x.tags; if (x.event !== undefined) { it.ev = x.event || undefined; if (x.event) S.evLabels[x.event] = S.evLabels[x.event] || evLabel(x.event); }
     saveItems();
     showItem(); render(); toast("Saved");
   }).catch(() => { btn.disabled = false; toast("Couldn't save. Try again"); });
@@ -769,7 +1073,7 @@ function upRow(job) {
   job.el.innerHTML = `<span class="nm">${esc(job.name)}</span><span class="st">${st}</span><span class="bar"><i style="width:${job.state === "error" ? 0 : pct}%"></i></span>`;
   job.el._job = job;
 }
-async function addUploads(files) {
+async function addUploads(files, preset) {
   const ok = [];
   for (const file of files) {
     const job = { file, name: upName(file), sent: 0, state: "waiting", uploadId: null };
@@ -783,9 +1087,9 @@ async function addUploads(files) {
   if (!ok.length) return;
   const n = ok.length, vids = ok.filter(j => j.file.type.startsWith("video/")).length;
   const what = vids === n ? (n === 1 ? "this video" : `these ${n} videos`) : vids ? `these ${n} photos & videos` : (n === 1 ? "this photo" : `these ${n} photos`);
-  const t = await tagSheet({ title: `Who's in ${what}?`, sub: "Tag people and add hashtags, or skip. You can change it later.", okLabel: `Upload${n > 1 ? " " + n : ""}`, skipLabel: "Skip tags" });
+  const t = await tagSheet({ title: `Who's in ${what}?`, sub: "Tag people and add hashtags, or skip. You can change it later.", okLabel: `Upload${n > 1 ? " " + n : ""}`, skipLabel: "Skip tags", event: preset || "", events: uploadableEvents(preset) });
   if (!t) return;
-  ok.forEach(j => { j.people = t.people; j.tags = t.tags; upRow(j); UP.queue.push(j); });
+  ok.forEach(j => { j.people = t.people; j.tags = t.tags; j.event = t.event || ""; upRow(j); UP.queue.push(j); });
   runUploads();
 }
 function readB64(blob) {
@@ -895,7 +1199,7 @@ async function uploadOne(job) {
     job.file = await stripGps(job.file);
     job.ready = true; job.prep = false; upRow(job);
   }
-  const meta = { name: job.name, mime: job.file.type, size: job.file.size, taken: job.taken || "", people: job.people || [], tags: job.tags || [] };
+  const meta = { name: job.name, mime: job.file.type, size: job.file.size, taken: job.taken || "", people: job.people || [], tags: job.tags || [], event: job.event || "" };
   // Fast way: Xverse opens a one-file upload link and the phone sends the file straight to Google Drive.
   // If Google won't accept it from the page, fall back to sending it through Xverse (slower).
   if (job.direct !== false) {
@@ -1004,12 +1308,19 @@ document.addEventListener("click", e => {
   if (b.dataset.del !== undefined) return deleteItem(b);
   if (b.dataset.upretry !== undefined) { const row = b.closest(".uprow"), job = row && row._job; if (job) { job.state = "waiting"; job.retry = false; upRow(job); UP.queue.push(job); runUploads(); } return; }
   if (b.dataset.tab) {
-    if (b.dataset.tab !== "moments") return toast(b.dataset.tab === "events" ? "Events are coming soon" : "Memories are coming soon");
+    if (b.dataset.tab === "memories") return toast("Memories are coming soon");
+    return showTab(b.dataset.tab);
   }
+  if (b.dataset.evnew !== undefined) return openBuilder(null);
+  if (b.dataset.ev && b.classList.contains("evc")) return openEvent(b.dataset.ev);
+  if (b.dataset.hk) { $("tagQ").value = ""; $("tagHits").hidden = true; S.filter = { k: b.dataset.hk, v: b.dataset.hv }; return render(); }
+  if (b.dataset.evf) { closeViewer(); closeEvent(); S.filter = { k: "event", v: b.dataset.evf }; showTab("moments"); return render(); }
 });
+$("tagQ").addEventListener("input", tagSearch);
+document.addEventListener("click", e => { if (!e.target.closest(".tsearch")) $("tagHits").hidden = true; });
 $("addBtn").onclick = () => $("pick").click();
 $("camBtn").onclick = () => $("cam").click();
-["pick", "cam"].forEach(id => $(id).addEventListener("change", e => { const f = [...e.target.files]; e.target.value = ""; if (f.length) addUploads(f); }));
+["pick", "cam"].forEach(id => $(id).addEventListener("change", e => { const f = [...e.target.files]; e.target.value = ""; const p = UP.preset; UP.preset = ""; if (f.length) addUploads(f, p); }));
 $("vClose").onclick = closeViewer;
 $("vPrev").onclick = () => step(-1);
 $("vNext").onclick = () => step(1);
