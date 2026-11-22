@@ -886,7 +886,10 @@ function openEvent(id, opt) {
   const photos = (S.items || []).filter(x => x.ev === id);
   const badge = e.status === "cancelled" ? "Cancelled" : e.invited ? "You're invited" : core && e.see === "hidden" ? "Hidden from FCs"
     : e.act === "rsvp" && !e.closed ? "RSVP by " + closesText(e) : order ? (e.closed ? "Orders closed" : "Closes " + closesText(e)) : "";
-  const rb = e.act === "rsvp" || order ? respondBlock(e) : null;
+  // Preview as FC: the form as someone who hasn't answered yet sees it (core's own answer and payment left out)
+  const re = !S.preview ? e : Object.assign({}, e, { mine: undefined },
+    e.ext ? { ext: Object.assign({}, e.ext, { needName: false, rate: "Normal", paid: false }), pay: Object.assign({}, e.pay, { amount: e.ext.newAmount || e.pay.amount }) } : {});
+  const rb = e.act === "rsvp" || order ? respondBlock(re) : null;
   const P = $("evPage");
   const page = () => `${S.preview ? `<div class="prevbar">Preview: this is what FCs see · <button class="linkbtn" data-unprev style="color:#e8a197">Back</button></div>` : ""}<div class="evcover"><button class="evback" data-evclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
     ${badge ? `<span class="bdg">${esc(badge)}</span>` : ""}<h2>${esc(e.title)}</h2><p>${order ? "Team order" + (e.max ? " · max " + e.max + " per person" : "") : esc(whenText(e))}</p></div>
@@ -904,7 +907,7 @@ function openEvent(id, opt) {
       ${core ? `<div class="card" style="text-align:left"><b>Core team</b><p style="margin:6px 0 0">${order ? "Orders aren't added to the calendar." : e.cal ? "Linked with the EXO Calendar of Events." : "Not in the EXO Calendar of Events."}${e.recurring ? " Repeating entry: edit its date in the calendar." : ""}</p>
         <div class="btns" style="justify-content:flex-start">${e.act !== "fyi" ? `<button class="btn rose" data-evres>Results</button>` : ""}<button class="btn ghost" data-evedit>Edit</button><button class="btn ghost" data-evprev>Preview as FC</button>${e.status === "cancelled" ? `<button class="btn ghost" data-evundo>Restore</button>` : `<button class="btn ghost" data-evcancel style="color:var(--bad)">Cancel</button>`}</div></div>` : ""}
     </div>
-    ${rb ? respondBar(e, rb.st) : e.canUpload && e.album && e.status !== "cancelled" ? `<div class="evbar"><button class="btn rose" data-evadd>Add photos to this event</button></div>` : ""}`;
+    ${rb ? respondBar(re, rb.st) : e.canUpload && e.album && e.status !== "cancelled" ? `<div class="evbar"><button class="btn rose" data-evadd>Add photos to this event</button></div>` : ""}`;
   P.innerHTML = page();
   P.hidden = false; P.scrollTop = 0; document.body.style.overflow = "hidden";
   const thumbsIn = () => P.querySelectorAll("[data-evph]").forEach(b => {
@@ -913,7 +916,7 @@ function openEvent(id, opt) {
   });
   thumbsIn();
   // keep the page fresh but don't jump: only the answer area and the bottom bar redraw
-  const redraw = () => { const A = $("rsArea"); if (A) A.innerHTML = rb.html(); const bar = P.querySelector(".evbar"); if (bar) bar.outerHTML = respondBar(e, rb.st); else if (rb) P.insertAdjacentHTML("beforeend", respondBar(e, rb.st)); };
+  const redraw = () => { const A = $("rsArea"); if (A) A.innerHTML = rb.html(); const bar = P.querySelector(".evbar"); if (bar) bar.outerHTML = respondBar(re, rb.st); else if (rb) P.insertAdjacentHTML("beforeend", respondBar(e, rb.st)); };
   P.onclick = ev => {
     const b = ev.target.closest("button"); if (!b) return;
     if (b.dataset.evclose !== undefined) { S.preview = false; return closeEvent(); }
@@ -932,7 +935,7 @@ function openEvent(id, opt) {
         .catch(() => toast("Couldn't save. Try again"));
     }
   };
-  if (rb) wireRespond(e, rb, redraw);
+  if (rb) wireRespond(re, rb, redraw);
 }
 // Suggested tag: words joined (Nov Anniversary Lunch → NovAnniversaryLunch) + the year; + the month if the title has none
 function suggestTag(title, dateStr) {
@@ -1229,13 +1232,14 @@ function respondBlock(e) {
       const t = liveTotal(e, st.a), xPay = e.ext && e.mine && e.mine.status === "going" && st.status === "going";
       if (e.ext) {
         const paid = xPay && e.mine.proof, rateTxt = e.ext.rate === "Early" ? "Early bird" : "Normal rate";
-        h += `<div class="card" style="text-align:left"><b>Payment</b><p style="margin:2px 0 0;color:var(--ink)">S${money(e.pay.amount)} · ${rateTxt}</p>
-          ${paid ? `<p style="margin:6px 0 0;color:#2f8f6b;font-weight:600">Paid ✓</p>` : `<p style="margin:6px 0 0">${esc(e.pay.details || "")}</p>
+        const meP = S.me && (S.people || []).find(p => p.n === S.me.name), byBU = paid && meP && meP.g === "core team";
+        h += `<div class="card" style="text-align:left"><b>Payment</b>${byBU ? "" : `<p style="margin:2px 0 0;color:var(--ink)">S${money(e.pay.amount)} · ${rateTxt}</p>`}
+          ${paid ? `<p style="margin:6px 0 0;color:#2f8f6b;font-weight:600">${byBU ? "Paid by BU" : "Paid ✓"}</p>` : `<p style="margin:6px 0 0">${esc(e.pay.details || "")}</p>${(m => m ? `<button class="calbtn" data-cpy="${m[0].replace(/\s/g, "")}">Copy PayNow number ${esc(m[0])}</button>` : "")(String(e.pay.details || "").match(/\b[89]\d{3} ?\d{4}\b/))}
           ${xPay ? `<p style="margin:6px 0 0;color:var(--bad);font-weight:600">Payment pending</p>` : ""}
           ${locked && !xPay ? "" : `<button class="calbtn" data-pf>${st.file ? "Screenshot ready: " + esc(st.file.name) : "+ Add payment screenshot"}</button><input type="file" id="pfIn" accept="image/*,application/pdf" hidden>`}`}</div>`;
         return h;
       }
-      h += `<div class="card" style="text-align:left"><b>Payment</b><p style="margin:2px 0 0;color:var(--ink)">${t ? money(t) + " · " : ""}${esc(e.pay.details || "")}</p>
+      h += `<div class="card" style="text-align:left"><b>Payment</b><p style="margin:2px 0 0;color:var(--ink)">${t ? money(t) + " · " : ""}${esc(e.pay.details || "")}</p>${(m => m ? `<button class="calbtn" data-cpy="${m[0].replace(/\s/g, "")}">Copy PayNow number ${esc(m[0])}</button>` : "")(String(e.pay.details || "").match(/\b[89]\d{3} ?\d{4}\b/))}
         ${e.mine && e.mine.proof ? `<p style="margin:6px 0 0;color:#2f8f6b;font-weight:600">Screenshot received ✓</p>` : ""}
         ${locked ? "" : `<button class="calbtn" data-pf>${st.file ? "Screenshot ready: " + esc(st.file.name) : e.mine && e.mine.proof ? "Replace payment screenshot" : "+ Add payment screenshot"}</button><input type="file" id="pfIn" accept="image/*,application/pdf" hidden>`}</div>`;
     }
@@ -1250,6 +1254,11 @@ function respondBar(e, st) {
   if (S.preview) return `<div class="evbar"><button class="btn ghost" disabled>Preview only · answers aren't saved</button></div>`;
   const consent = S.me && S.me.role === "guest" ? `<p class="consent">By registering, you agree that EXO may use your name and email to contact you about this event and future EXO events or opportunities. You may request for consent withdrawal at any time.</p>` : "";
   return `<div class="evbar" style="flex-direction:column;align-items:stretch">${consent}${t && (order || e.pay) ? `<div style="text-align:center;font-size:13px;color:var(--muted)">Total <b style="color:var(--ink)">${money(t)}</b></div>` : ""}<button class="btn rose" data-rsave${!order && !st.status ? " disabled" : ""}>${label}</button></div>`;
+}
+function copyText(t) {
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
+  return new Promise((ok, no) => { const a = document.createElement("textarea"); a.value = t; a.style.cssText = "position:fixed;opacity:0"; document.body.appendChild(a); a.select();
+    try { document.execCommand("copy") ? ok() : no(); } catch (x) { no(x); } a.remove(); });
 }
 async function sendProof(e, file) {
   const r = await call("proofstart", { id: e.id, mime: file.type || "image/jpeg", size: file.size });
@@ -1273,7 +1282,8 @@ function wireRespond(e, rb, redraw) {
     if (b.dataset.qm) { const l = st.a[b.dataset.qm] || []; st.a[b.dataset.qm] = l.includes(b.dataset.o) ? l.filter(x => x !== b.dataset.o) : l.concat(b.dataset.o); return redraw(); }
     if (b.dataset.qy) { st.a[b.dataset.qy] = b.dataset.v; return redraw(); }
     if (b.dataset.qi) { const m = st.a[b.dataset.qi] || (st.a[b.dataset.qi] = {}); m[b.dataset.o] = Math.max(0, (m[b.dataset.o] || 0) + +b.dataset.d); if (!m[b.dataset.o]) delete m[b.dataset.o]; return redraw(); }
-    if (b.dataset.pf !== undefined) return P.querySelector("#pfIn").click();
+    if (b.dataset.pf !== undefined) return S.preview ? toast("Preview only · nothing is uploaded") : P.querySelector("#pfIn").click();
+    if (b.dataset.cpy !== undefined) return copyText(b.dataset.cpy).then(() => toast("Number copied"), () => toast("Couldn't copy. Press and hold the number instead"));
     if (b.dataset.rwithdraw !== undefined) {
       if (!confirm("Withdraw your order?")) return;
       const r = await call("respond", { id: e.id, withdraw: true }).catch(() => ({}));
@@ -1352,7 +1362,8 @@ function openResults(e) {
       return `<div class="card" style="text-align:left"><b>${esc(q.label)}${q.type === "items" ? " · totals" : ""}</b>${rows.map(([l, n]) => `<div class="rrow"><span>${esc(l)}</span><b>${esc(n)}</b></div>`).join("") || `<p style="margin:6px 0 0">No answers yet.</p>`}</div>`;
     }).join("");
     const pay = e.pay ? `<div class="card" style="text-align:left"><b>Payment proof</b><div class="rrow"><span>Uploaded</span><b style="color:#2f8f6b">${going.filter(x => x.proof).length}</b></div><div class="rrow"><span>Missing</span><b style="color:var(--bad)">${going.filter(x => !x.proof).length}</b></div></div>` : "";
-    const people = list => `<div class="card" style="text-align:left">${list.map(x => `<div class="rrow"><span>${esc(x.name || x.a)}</span><span>${x.total ? money(x.total) + " " : ""}${e.pay && x.status ? (x.proofLive ? `<button class="linkbtn" data-pv="${esc(x.who)}">view proof</button>` : x.proof ? `<small>paid ✓</small>` : `<small style="color:var(--bad)">no proof</small>`) : `<small>${esc(x.g || x.group || "")}</small>`}</span></div>`).join("") || `<p style="margin:0">No one here.</p>`}</div>`;
+    const bu = x => e.ext && x.proof && x.group === "core team";
+    const people = list => `<div class="card" style="text-align:left">${list.map(x => `<div class="rrow"><span>${esc(x.name || x.a)}</span><span>${x.total && !bu(x) ? money(x.total) + " " : ""}${bu(x) ? `<small>paid by BU</small>` : e.pay && (x.status === "going" || x.status === "ordered") ? (x.proofLive ? `<button class="linkbtn" data-pv="${esc(x.who)}">view proof</button>` : x.proof ? `<small>paid ✓</small>` : `<small style="color:var(--bad)">no proof</small>`) : `<small>${esc(x.g || x.group || "")}</small>`}</span></div>`).join("") || `<p style="margin:0">No one here.</p>`}</div>`;
     const draw = () => {
       const B = $("rsB"); if (!B) return;
       let h = `<div class="tiles">${tiles.map(([l, n, k]) => `<button class="${view === k && k ? "on" : ""}" data-tv="${k}"${k ? "" : " disabled"}><b>${n}</b><span>${l}</span></button>`).join("")}</div>`;
