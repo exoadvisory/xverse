@@ -424,8 +424,9 @@ function openApp() {
   let quiet = false;
   if (!S.items) {
     try { const c = JSON.parse(localStorage.getItem("xv-items") || "null"); if (c && c.items) { S.me = c.me; S.people = c.people || []; S.items = c.items; S.comments = c.comments || {}; S.events = c.events || []; S.evLabels = c.evLabels || {}; render(); quiet = true; } } catch (e) {}
+    if (quiet) deepFromCache();
   }
-  if (!quiet) status(`<div class="ico">${ICON.photo}</div><h3>Opening Moments…</h3>`);
+  if (!quiet) status(`<div class="ico">${ICON.photo}</div><h3>${DEEP.ev && !deepDone ? "Opening event…" : "Opening Moments…"}</h3>`);
   call("open").then(r => {
     if (!r.ok) {
       if (r.error === "invalid_token") { wipeLocal(); return showSignIn("Your sign-in expired. Please sign in again."); }
@@ -436,6 +437,7 @@ function openApp() {
     S.events = r.events || []; S.evLabels = r.evLabels || {};
     saveItems();
     render();
+    deepRefresh();
     afterOpen();
   }).catch(() => { if (!quiet) offline(openApp); });
 }
@@ -443,7 +445,22 @@ function openApp() {
 // links like …/xverse/?ev=<event>&ref=<FC code> open straight on the event (the code credits the FC who shared it)
 const DEEP = (() => { const q = new URLSearchParams(location.search); const d = { ev: q.get("ev") || "", ref: q.get("ref") || "", mem: q.get("mem") || "" };
   try { if (d.ref) sessionStorage.setItem("xv-ref", d.ref); else d.ref = sessionStorage.getItem("xv-ref") || ""; } catch (e) {} return d; })();
-let deepDone = false;
+let deepDone = false, deepCached = false, deepTouched = false;
+// event link + this phone already has the event saved: open it straight away, refresh when fresh data arrives
+function deepFromCache() {
+  if (!DEEP.ev || deepDone || !S.events.some(e => e.id === DEEP.ev)) return;
+  deepDone = true; deepCached = true; deepTouched = false;
+  showTab("events"); openEvent(DEEP.ev);
+  const P = $("evPage"), t = () => { deepTouched = true; };
+  ["input", "change", "click"].forEach(k => P.addEventListener(k, t, { once: true }));
+}
+function deepRefresh() {
+  if (!deepCached) return; deepCached = false;
+  const P = $("evPage");
+  if (!S.events.some(e => e.id === DEEP.ev)) { if (!P.hidden) closeEvent(); return toast("That event isn't open to you, or it has ended"); }
+  if (P.hidden || deepTouched) return;                       // closed it, or already filling in: leave it alone
+  const y = P.scrollTop; openEvent(DEEP.ev); P.scrollTop = y;
+}
 function afterOpen() {
   const guest = S.me && S.me.role === "guest";
   if (guest) { let shown = ""; try { shown = localStorage.getItem("xv-gnote"); } catch (e) {}
