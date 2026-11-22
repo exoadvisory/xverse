@@ -1236,15 +1236,22 @@ function respondBlock(e) {
         h += `<div class="card" style="text-align:left"><b>Payment</b>${byBU ? "" : `<p style="margin:2px 0 0;color:var(--ink)">S${money(e.pay.amount)} · ${rateTxt}</p>`}
           ${paid ? `<p style="margin:6px 0 0;color:#2f8f6b;font-weight:600">${byBU ? "Paid by BU" : "Paid ✓"}</p>` : `<p style="margin:6px 0 0">${esc(e.pay.details || "")}</p>${(m => m ? `<button class="calbtn" data-cpy="${m[0].replace(/\s/g, "")}">Copy PayNow number ${esc(m[0])}</button>` : "")(String(e.pay.details || "").match(/\b[89]\d{3} ?\d{4}\b/))}
           ${xPay ? `<p style="margin:6px 0 0;color:var(--bad);font-weight:600">Payment pending</p>` : ""}
-          ${locked && !xPay ? "" : `<button class="calbtn" data-pf>${st.file ? "Screenshot ready: " + esc(st.file.name) : "+ Add payment screenshot"}</button><input type="file" id="pfIn" accept="image/*,application/pdf" hidden>`}`}</div>`;
+          ${locked && !xPay ? "" : `<button class="calbtn" data-pf>${st.file ? "Screenshot ready: " + esc(st.file.name) : proofNeeded(e, st) ? "+ Add payment screenshot (required)" : "+ Add payment screenshot"}</button><input type="file" id="pfIn" accept="image/*,application/pdf" hidden>`}`}</div>`;
         return h;
       }
       h += `<div class="card" style="text-align:left"><b>Payment</b><p style="margin:2px 0 0;color:var(--ink)">${t ? money(t) + " · " : ""}${esc(e.pay.details || "")}</p>${(m => m ? `<button class="calbtn" data-cpy="${m[0].replace(/\s/g, "")}">Copy PayNow number ${esc(m[0])}</button>` : "")(String(e.pay.details || "").match(/\b[89]\d{3} ?\d{4}\b/))}
         ${e.mine && e.mine.proof ? `<p style="margin:6px 0 0;color:#2f8f6b;font-weight:600">Screenshot received ✓</p>` : ""}
-        ${locked ? "" : `<button class="calbtn" data-pf>${st.file ? "Screenshot ready: " + esc(st.file.name) : e.mine && e.mine.proof ? "Replace payment screenshot" : "+ Add payment screenshot"}</button><input type="file" id="pfIn" accept="image/*,application/pdf" hidden>`}</div>`;
+        ${locked ? "" : `<button class="calbtn" data-pf>${st.file ? "Screenshot ready: " + esc(st.file.name) : e.mine && e.mine.proof ? "Replace payment screenshot" : proofNeeded(e, st) ? "+ Add payment screenshot (required)" : "+ Add payment screenshot"}</button><input type="file" id="pfIn" accept="image/*,application/pdf" hidden>`}</div>`;
     }
     return h;
   } };
+}
+// A payment screenshot is required when someone newly joins / orders and there's something to pay
+function proofNeeded(e, st) {
+  if (!e.pay || S.preview) return false;
+  const joining = e.kind === "order" || st.status === "going";
+  const already = e.mine && (e.mine.status === "going" || e.mine.status === "ordered");
+  return joining && !already && liveTotal(e, st.a) > 0;
 }
 function respondBar(e, st) {
   if (e.closed || e.status === "cancelled") return "";
@@ -1292,6 +1299,7 @@ function wireRespond(e, rb, redraw) {
     }
     if (b.dataset.rsave !== undefined) {
       if (S.preview) return;
+      if (proofNeeded(e, st) && !st.file) { const pf = P.querySelector("[data-pf]"); if (pf) pf.scrollIntoView({ block: "center" }); return toast("Please add your payment screenshot first"); }
       b.disabled = true; b.innerHTML = LOADING;
       const body = e.kind === "order" ? { id: e.id, answers: st.a } : { id: e.id, status: st.status, answers: st.status === "going" ? st.a : {} };
       if (S.me && S.me.role === "guest") {
