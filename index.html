@@ -98,6 +98,7 @@ nav.tabs .soonlbl{font-size:8px;letter-spacing:.5px;text-transform:uppercase;pos
 .vtags span{font-size:12px;border-radius:999px;padding:3px 9px;background:rgba(255,255,255,.12)}
 .vtags span.h{background:rgba(232,161,151,.25);color:#f3c6be}
 .vtags span.gone{opacity:.5}
+.vtags span.x{background:transparent;border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.55)}
 .vact{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .vact .del{margin-left:auto;background:rgba(192,57,43,.25)}
 
@@ -663,7 +664,8 @@ function showItem() {
 }
 function viewerBits(it) {
   const evl = it.ev && S.evLabels[it.ev];
-  $("vTags").innerHTML = (evl ? `<button class="e" data-evf="${esc(it.ev)}">#${esc(evl.tag || evl.t)}</button>` : "") + it.people.map(n => `<span class="${isPerson(n) ? "" : "gone"}">${esc(alias(n))}</span>`).join("") + it.tags.map(t => `<span class="h">#${esc(t)}</span>`).join("");
+  $("vTags").innerHTML = (evl ? `<button class="e" data-evf="${esc(it.ev)}">#${esc(evl.tag || evl.t)}</button>` : "") + it.people.map(n => `<span class="${isPerson(n) ? "" : "gone"}">${esc(alias(n))}</span>`).join("") + it.tags.map(t => `<span class="h">#${esc(t)}</span>`).join("")
+    + (it.xt || []).map(t => `<span class="x">${esc(t)}</span>`).join("");   // an event page's own tags (e.g. "Xiamen2027 Team 3"): greyed, not tappable
   const mb = it.size ? ` · ${(it.size / 1048576).toFixed(it.size > 10485760 ? 0 : 1)} MB` : "";
   $("vAct").innerHTML = (it.video ? "" : `<button class="vbtn" data-hd>${ICON.hd}<span>View HD</span></button>`)
     + `<button class="vbtn" data-dl>${ICON.dl}<span>Save HD${mb}</span></button>`
