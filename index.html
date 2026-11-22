@@ -1217,12 +1217,24 @@ function respondBlock(e) {
       if (st.gname === undefined) { st.gname = (e.mine && e.mine.answers && e.mine.answers._guest && e.mine.answers._guest.name) || ""; try { if (!st.gname) st.gname = localStorage.getItem("xv-gname") || ""; } catch (x) {} }
       h += `<div class="card fm" style="text-align:left"><b>Your name</b><input data-gname value="${esc(st.gname)}" maxlength="80" placeholder="Full name"${locked ? " disabled" : ""}></div>`;
     }
+    if (e.ext && e.ext.needName && !(S.me && S.me.role === "guest")) {
+      if (st.xname === undefined) st.xname = "";
+      h += `<div class="card fm" style="text-align:left"><b>Your full name</b><input data-xname value="${esc(st.xname)}" maxlength="80" placeholder="As registered for this event"${locked ? " disabled" : ""}></div>`;
+    }
     if (!order) h += `<div class="card" style="text-align:left"><b>Are you coming?</b>${e.deadline ? `<p style="margin:2px 0 8px">${locked ? "RSVP closed" : "Reply by " + esc(closesText(e))}</p>` : ""}
       <div class="seg2 big"><button class="${st.status === "going" ? "on" : ""}" data-rs="going"${locked ? " disabled" : ""}>Going</button><button class="${st.status === "not" ? "on" : ""}" data-rs="not"${locked ? " disabled" : ""}>Not going</button></div></div>`;
     else h += `<div class="card" style="text-align:left"><b>${e.mine && e.mine.status === "ordered" ? "Your order" : "Place your order"}</b><p style="margin:2px 0 0">${locked ? "Orders closed" : "Closes " + esc(closesText(e))}${e.max ? ` · max ${e.max} per person` : ""}</p></div>`;
     if (showQ) h += (e.form || []).map(q => qHtml(q, st.a, locked)).join("");
     if (showQ && e.pay) {
-      const t = liveTotal(e, st.a);
+      const t = liveTotal(e, st.a), xPay = e.ext && e.mine && e.mine.status === "going" && st.status === "going";
+      if (e.ext) {
+        const paid = xPay && e.mine.proof, rateTxt = e.ext.rate === "Early" ? "Early bird" : "Normal rate";
+        h += `<div class="card" style="text-align:left"><b>Payment</b><p style="margin:2px 0 0;color:var(--ink)">S${money(e.pay.amount)} · ${rateTxt}</p>
+          ${paid ? `<p style="margin:6px 0 0;color:#2f8f6b;font-weight:600">Paid ✓</p>` : `<p style="margin:6px 0 0">${esc(e.pay.details || "")}</p>
+          ${xPay ? `<p style="margin:6px 0 0;color:var(--bad);font-weight:600">Payment pending</p>` : ""}
+          ${locked && !xPay ? "" : `<button class="calbtn" data-pf>${st.file ? "Screenshot ready: " + esc(st.file.name) : "+ Add payment screenshot"}</button><input type="file" id="pfIn" accept="image/*,application/pdf" hidden>`}`}</div>`;
+        return h;
+      }
       h += `<div class="card" style="text-align:left"><b>Payment</b><p style="margin:2px 0 0;color:var(--ink)">${t ? money(t) + " · " : ""}${esc(e.pay.details || "")}</p>
         ${e.mine && e.mine.proof ? `<p style="margin:6px 0 0;color:#2f8f6b;font-weight:600">Screenshot received ✓</p>` : ""}
         ${locked ? "" : `<button class="calbtn" data-pf>${st.file ? "Screenshot ready: " + esc(st.file.name) : e.mine && e.mine.proof ? "Replace payment screenshot" : "+ Add payment screenshot"}</button><input type="file" id="pfIn" accept="image/*,application/pdf" hidden>`}</div>`;
@@ -1277,14 +1289,19 @@ function wireRespond(e, rb, redraw) {
         body.guest = { name: st.gname.trim(), consent: true }; body.ref = DEEP.ref || "";
         try { localStorage.setItem("xv-gname", st.gname.trim()); } catch (x) {}
       }
+      if (e.ext && e.ext.needName) {
+        if ((st.xname || "").trim().length < 2) { b.disabled = false; redraw(); return toast("Please add your full name"); }
+        body.name = st.xname.trim();
+      }
       let r = await call("respond", body).catch(() => ({}));
       if (!r.ok) {
         b.disabled = false;
         const q = (e.form || []).find(x => x.id === r.q);
         redraw();
-        return toast({ required: q ? `Please answer "${q.label}"` : "Please answer the required questions", over_max: `Max ${e.max} per person`, empty_order: "Please pick at least one item", closed: "Sorry, this has closed", guest_name: "Please add your name" }[r.error] || "Couldn't save. Try again");
+        return toast({ required: q ? `Please answer "${q.label}"` : "Please answer the required questions", over_max: `Max ${e.max} per person`, empty_order: "Please pick at least one item", closed: "Sorry, this has closed", guest_name: "Please add your name", need_name: "Please add your full name", name_taken: "That name is on the EXO list. Please sign in with your own EXO account" }[r.error] || "Couldn't save. Try again");
       }
       e.mine = r.mine;
+      if (e.ext && body.name) e.ext.needName = false;
       if (st.file) { try { e.mine = await sendProof(e, st.file); st.file = null; } catch (err) { toast("Saved, but the screenshot didn't upload. Try again"); } }
       saveItems(); renderEvents(); openEvent(e.id);
       toast(e.kind === "order" ? "Order saved" : st.status === "going" ? "See you there!" : "Thanks for letting us know");
@@ -1295,6 +1312,7 @@ function wireRespond(e, rb, redraw) {
     if (t.dataset.qn !== undefined) st.a[t.dataset.qn] = t.value === "" ? undefined : +t.value;
     if (t.dataset.qt !== undefined) st.a[t.dataset.qt] = t.value;
     if (t.dataset.gname !== undefined) st.gname = t.value;
+    if (t.dataset.xname !== undefined) st.xname = t.value;
   };
   const onChange = ev => {
     if (ev.target.id !== "pfIn") return;
@@ -1341,7 +1359,7 @@ function openResults(e) {
       if (view === "going") h += people(going);
       else if (view === "not") h += people(not);
       else if (view === "guests") h += `<div class="card" style="text-align:left">${r.rows.filter(x => x.guest).map(x => `<div class="rrow"><span>${esc(x.name.replace(/ \(Guest\)$/, ""))}<br><small>${esc(x.guest.email)}</small></span><span><small>${esc({ going: "Going", not: "Not going", ordered: "Ordered" }[x.status] || x.status)}<br>${x.guest.via ? "via " + esc(x.guest.via) : "direct"}</small></span></div>`).join("") || `<p style="margin:0">No guests yet.</p>`}</div>`;
-      else if (view === "noreply") h += people(r.noReply) + `<div class="card"><button class="btn rose" data-exp>Export no-reply list</button><p style="margin:8px 0 0">Saved to the event's tab in EXO Event Attendance Collation</p></div>`;
+      else if (view === "noreply") h += people(r.noReply) + (r.ext ? "" : `<div class="card"><button class="btn rose" data-exp>Export no-reply list</button><p style="margin:8px 0 0">Saved to the event's tab in EXO Event Attendance Collation</p></div>`);
       else h += summary() + pay;
       h += r.tab ? `<div class="card"><a class="btn ghost" href="${esc(r.tab)}" target="_blank" rel="noopener" style="text-decoration:none">Open the event's tab in Google Sheets</a></div>` : "";
       B.innerHTML = h;
