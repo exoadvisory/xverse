@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="xv-build" content="26c4b0ad28">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15161f">
 <meta name="apple-mobile-web-app-title" content="Xverse">
@@ -248,6 +249,7 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .venue .dir{flex:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:700;color:var(--rose2);text-decoration:none;background:#fff}
 .mapchk{display:block;margin:6px 0 0 auto;font-size:13px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.updbar{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 10px);z-index:90;border:0;border-radius:14px;background:var(--ink);color:#fff;font:600 14px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:12px 14px;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer}
 </style>
 </head>
 <body>
@@ -2119,6 +2121,45 @@ function doneCard(acct, d, test, already) {
 }
 const RESOLVE = new URLSearchParams(location.search).get("resolve");
 if (RESOLVE) resolvePage(RESOLVE); else openApp();
+
+// ---- update checker: open copies (Home Screen app / old tab) move to the latest published version ----
+const XV_BUILD = "26c4b0ad28";
+const UPD = { last: 0, ready: "" };
+(() => { const q = new URLSearchParams(location.search); if (!q.has("xvv")) return; q.delete("xvv"); const s = q.toString();
+  try { history.replaceState(history.state, "", location.pathname + (s ? "?" + s : "") + location.hash); } catch (e) {} })();
+function updBusy() {
+  const a = document.activeElement;
+  return UP.running || UP.queue.length > 0 || !!document.querySelector(".shade") || !$("evPage").hidden || !$("viewer").hidden
+    || !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+}
+function updReload() {
+  try { sessionStorage.setItem("xv-upd", UPD.ready); } catch (e) {}
+  const q = new URLSearchParams(location.search); q.set("xvv", UPD.ready);
+  location.replace(location.pathname + "?" + q.toString() + location.hash);
+}
+function updBar() {
+  if ($("updBar")) return;
+  const b = document.createElement("button"); b.id = "updBar"; b.className = "updbar"; b.type = "button";
+  b.textContent = "A new version of Xverse is ready. Tap to refresh"; b.onclick = updReload; document.body.appendChild(b);
+}
+function updApply() {
+  if (!UPD.ready) return;
+  let tried = ""; try { tried = sessionStorage.getItem("xv-upd") || ""; } catch (e) {}
+  if (tried === UPD.ready || updBusy()) updBar(); else updReload();   // already reloaded once for this version: never loop, offer the bar
+}
+function updCheck(force) {
+  if (location.protocol === "file:" || RESOLVE || !/^[0-9a-f]{10}$/.test(XV_BUILD)) return;
+  if (UPD.ready) { updApply(); return; }
+  if (!force && Date.now() - UPD.last < 60000) return;
+  UPD.last = Date.now();
+  fetch(location.pathname + "?xvcheck=" + Date.now(), { cache: "no-store" }).then(r => r.ok ? r.text() : "").then(t => {
+    const m = t.match(/<meta name="xv-build" content="([0-9a-f]{10})">/);
+    if (m && m[1] !== XV_BUILD) { UPD.ready = m[1]; updApply(); }
+  }).catch(() => {});
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) updCheck(); });
+setInterval(() => { if (!document.hidden) updCheck(true); }, 30 * 60000);
+setTimeout(() => updCheck(true), 4000);
 </script>
 </body>
 </html>
