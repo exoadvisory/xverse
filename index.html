@@ -201,7 +201,7 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .ferr{color:var(--bad);font-size:13px;margin-top:6px}
 .plist label{display:flex;justify-content:space-between;align-items:center;margin:0;padding:9px 12px;border-bottom:1px solid #f1ece4;font-size:15px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:400}
 .plist label input{width:20px;height:20px;flex:none;accent-color:var(--ink)}
-.seg2.big{margin-top:6px}.seg2.big button{flex:1;padding:12px;font-size:15px}
+.seg2.big{margin-top:6px}.seg2.stack{flex-direction:column;gap:8px}.seg2.big button{flex:1;padding:12px;font-size:15px}
 .qcard .opt{display:flex;justify-content:space-between;align-items:center;width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px 12px;margin-top:6px;font:inherit;font-size:15px;cursor:pointer;text-align:left;color:var(--ink)}
 .qcard .opt small{color:var(--muted)}.qcard .opt i{width:18px;height:18px;border-radius:50%;border:1.5px solid #c9c1b6;flex:none}.qcard .opt.m i{border-radius:5px}
 .qcard .opt.on{box-shadow:0 0 0 2px var(--ink) inset}.qcard .opt.on i{background:var(--ink);border-color:var(--ink)}
@@ -1242,7 +1242,7 @@ function respondBlock(e) {
       h += `<div class="card fm" style="text-align:left"><b>Your full name</b><input data-xname value="${esc(st.xname)}" maxlength="80" placeholder="As registered for this event"${locked ? " disabled" : ""}></div>`;
     }
     if (!order) h += `<div class="card" style="text-align:left"><b>Are you coming?</b>${e.deadline ? `<p style="margin:2px 0 8px">${locked ? "RSVP closed" : "Reply by " + esc(closesText(e))}</p>` : ""}
-      <div class="seg2 big"><button class="${st.status === "going" ? "on" : ""}" data-rs="going"${locked ? " disabled" : ""}>Going</button><button class="${st.status === "not" ? "on" : ""}" data-rs="not"${locked ? " disabled" : ""}>Not going</button></div></div>`;
+      <div class="seg2 big stack"><button class="${st.status === "going" ? "on" : ""}" data-rs="going"${locked ? " disabled" : ""}>YES, COUNT ME IN 🎉</button><button class="${st.status === "not" ? "on" : ""}" data-rs="not"${locked ? " disabled" : ""}>Naur, it's not for me 🙈</button></div></div>`;
     else h += `<div class="card" style="text-align:left"><b>${e.mine && e.mine.status === "ordered" ? "Your order" : "Place your order"}</b><p style="margin:2px 0 0">${locked ? "Orders closed" : "Closes " + esc(closesText(e))}${e.max ? ` · max ${e.max} per person` : ""}</p></div>`;
     if (showQ) h += (e.form || []).map(q => qHtml(q, st.a, locked)).join("");
     if (showQ && e.pay) {
