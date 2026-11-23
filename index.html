@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="xv-build" content="826a543822">
+<meta name="xv-build" content="2de8bf9fa1">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15161f">
 <meta name="apple-mobile-web-app-title" content="Xverse">
@@ -250,6 +250,7 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .mapchk{display:block;margin:6px 0 0 auto;font-size:13px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 .welc p{display:flex;gap:10px;margin:0 0 12px;text-align:left;font-size:15px;line-height:1.45}.welc p span:first-child{font-size:20px;line-height:1.2}
+.joinchip{display:block;width:100%;margin:2px 0 10px;border:1px dashed var(--line);background:#fff;border-radius:12px;padding:9px 12px;font-weight:600;font-size:14px;line-height:1.3;font-family:inherit;color:var(--ink);text-align:left;cursor:pointer}
 .updbar{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 10px);z-index:90;border:0;border-radius:14px;background:var(--ink);color:#fff;font:600 14px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:12px 14px;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer}
 </style>
 </head>
@@ -271,6 +272,7 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
         <input type="file" id="cam" accept="image/*,video/*" capture="environment" hidden>
       </div>
       <div id="queue" class="q"></div>
+      <div id="joinbar"></div>
       <div class="tsearch"><input id="tagQ" placeholder="Search tags, e.g. cedli" autocomplete="off" autocapitalize="none"><div class="hits" id="tagHits" hidden></div></div>
       <div class="chips" id="chips"></div>
       <p class="count" id="count"></p>
@@ -464,6 +466,61 @@ function deepRefresh() {
   if (P.hidden || deepTouched) return;                       // closed it, or already filling in: leave it alone
   const y = P.scrollTop; openEvent(DEEP.ev); P.scrollTop = y;
 }
+// ---- core team: who has joined (Sign-ins tab) ----
+function loadJoined(force) {
+  if (!force && S.joinedAt && Date.now() - S.joinedAt < 5 * 60000) return Promise.resolve(S.joined);
+  S.joinedAt = Date.now();
+  return call("joined").then(r => {
+    if (r && r.ok) { S.joined = r; const el = $("joinbar"); if (el && S.me && S.me.core) el.innerHTML = joinChip(); }
+    return S.joined;
+  }).catch(() => S.joined);
+}
+function joinChip() {
+  const J = S.joined;
+  if (!J) return `<button class="joinchip" data-joined>👥 Who's joined</button>`;
+  const n = J.people.filter(p => p.last).length;
+  return `<button class="joinchip" data-joined>👥 <b>${n}</b> of ${J.people.length} joined ›</button>`;
+}
+function agoTxt(iso) {
+  if (!iso) return "";
+  const d = new Date(iso), now = new Date(), day = 864e5;
+  const d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()), n0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((n0 - d0) / day);
+  if (days <= 0) return Date.now() - d < 36e5 ? "just now" : "today";
+  if (days === 1) return "yesterday";
+  if (days < 7) return days + " days ago";
+  return d.toLocaleDateString("en-SG", { day: "numeric", month: "short" });
+}
+function joinedSheet() {
+  const sh = sheet(`<div id="jnBody"><h3>Who's joined</h3><p class="sub">Loading…</p></div>`);
+  let view = "not";
+  const draw = () => {
+    const B = sh.querySelector("#jnBody"), J = S.joined;
+    if (!B) return;
+    if (!J) { B.innerHTML = `<h3>Who's joined</h3><p class="sub">Couldn't load. Please try again.</p><div class="btns"><button class="btn ghost" data-close>Close</button></div>`; return; }
+    const yes = J.people.filter(p => p.last).sort((a, b) => b.last.localeCompare(a.last)), no = J.people.filter(p => !p.last);
+    const core = p => p.core ? ` <span class="bdg g">Core</span>` : "";
+    const row = (p, right) => `<div class="rrow"><span>${esc(p.a)}${core(p)}${p.a !== p.n ? `<br><small>${esc(p.n)}</small>` : ""}</span><span><small>${right || ""}</small></span></div>`;
+    const role = r => ({ candidate: "Candidate", guest: "Guest", team: "EXO Team" }[r] || r);
+    let list = view === "not"
+      ? (no.length ? no.map(p => row(p, "")).join("") : `<p style="margin:0">Everyone has joined 🎉</p>`)
+      : (yes.length ? yes.map(p => row(p, "Last visit<br>" + agoTxt(p.last))).join("") : `<p style="margin:0">No one yet.</p>`)
+        + (J.others.length ? `<div class="memsec" style="margin-top:14px">Candidates & guests</div>` + J.others.map(o => `<div class="rrow"><span>${esc(o.name)}<br><small>${esc(role(o.role))}</small></span><span><small>Last visit<br>${agoTxt(o.last)}</small></span></div>`).join("") : "");
+    B.innerHTML = `<h3>Who's joined</h3><p class="sub">${yes.length} of ${J.people.length} EXOians have opened Xverse</p>
+      <div class="seg2" style="margin-bottom:10px"><button class="${view === "not" ? "on" : ""}" data-jv="not">Not yet · ${no.length}</button><button class="${view === "yes" ? "on" : ""}" data-jv="yes">Joined · ${yes.length}</button></div>
+      <div class="card" style="text-align:left;max-height:52vh;overflow-y:auto">${list}</div>
+      <div class="btns">${view === "not" && no.length ? `<button class="btn ghost" data-jcopy>Copy names</button>` : ""}<button class="btn rose" data-close>Done</button></div>`;
+  };
+  sh.addEventListener("click", ev => {
+    const v = ev.target.closest("[data-jv]"); if (v) { view = v.dataset.jv; draw(); return; }
+    if (ev.target.closest("[data-jcopy]")) {
+      const no = (S.joined ? S.joined.people : []).filter(p => !p.last);
+      copyText(no.map((p, i) => `${i + 1}. ${p.a}`).join("\n")).then(() => toast(`Copied ${no.length} names`)).catch(() => toast("Couldn't copy"));
+    }
+  });
+  if (S.joined) draw();
+  loadJoined(true).then(draw);
+}
 // one-time welcome for EXOians (per account, per phone). Candidates/guests never get it, so it shows once they become an FC.
 function welcomeCard() {
   const k = "xv-welcome", id = S.me.email || "1"; let seen = "";
@@ -534,6 +591,8 @@ function render() {
   if (me.role === "guest") return renderGuest();
   $("upbar").hidden = !me.canUpload;
   $("vonly").hidden = me.canUpload !== false;
+  $("joinbar").innerHTML = me.core ? joinChip() : "";
+  if (me.core) loadJoined();
   // filter chips: All · Photos of me · My uploads · People · top hashtags
   // only recent tags as chips (used in the last 30 days); older ones are found with the search box
   const cutoff = Date.now() - 30 * 864e5, tagCount = {};
@@ -2045,6 +2104,7 @@ document.addEventListener("click", e => {
   if (b.classList.contains("tile") && b.dataset.i !== undefined) return openViewer(+b.dataset.i);
   if (b.dataset.f) { S.filter = { k: b.dataset.f, v: b.dataset.v }; return render(); }
   if (b.dataset.people !== undefined) return peopleSheet();
+  if (b.dataset.joined !== undefined) return joinedSheet();
   if (b.dataset.hd !== undefined) return viewHd(b);
   if (b.dataset.dl !== undefined) return saveHd(b);
   if (b.dataset.tagedit !== undefined) return editTags(b);
@@ -2138,7 +2198,7 @@ const RESOLVE = new URLSearchParams(location.search).get("resolve");
 if (RESOLVE) resolvePage(RESOLVE); else openApp();
 
 // ---- update checker: open copies (Home Screen app / old tab) move to the latest published version ----
-const XV_BUILD = "826a543822";
+const XV_BUILD = "2de8bf9fa1";
 const UPD = { last: 0, ready: "" };
 (() => { const q = new URLSearchParams(location.search); if (!q.has("xvv")) return; q.delete("xvv"); const s = q.toString();
   try { history.replaceState(history.state, "", location.pathname + (s ? "?" + s : "") + location.hash); } catch (e) {} })();
