@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="xv-build" content="26c4b0ad28">
+<meta name="xv-build" content="826a543822">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15161f">
 <meta name="apple-mobile-web-app-title" content="Xverse">
@@ -249,6 +249,7 @@ details.more2 summary{cursor:pointer;color:var(--muted);font-size:13px;font-weig
 .venue .dir{flex:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:700;color:var(--rose2);text-decoration:none;background:#fff}
 .mapchk{display:block;margin:6px 0 0 auto;font-size:13px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:80;background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.welc p{display:flex;gap:10px;margin:0 0 12px;text-align:left;font-size:15px;line-height:1.45}.welc p span:first-child{font-size:20px;line-height:1.2}
 .updbar{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 10px);z-index:90;border:0;border-radius:14px;background:var(--ink);color:#fff;font:600 14px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:12px 14px;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer}
 </style>
 </head>
@@ -463,6 +464,19 @@ function deepRefresh() {
   if (P.hidden || deepTouched) return;                       // closed it, or already filling in: leave it alone
   const y = P.scrollTop; openEvent(DEEP.ev); P.scrollTop = y;
 }
+// one-time welcome for EXOians (per account, per phone). Candidates/guests never get it, so it shows once they become an FC.
+function welcomeCard() {
+  const k = "xv-welcome", id = S.me.email || "1"; let seen = "";
+  try { seen = localStorage.getItem(k) || ""; } catch (e) {}
+  if (seen.split("|").includes(id) || document.querySelector(".shade")) return;
+  try { localStorage.setItem(k, (seen ? seen + "|" : "") + id); } catch (e) {}
+  sheet(`<h3 style="font-size:22px">Welcome to Xverse 👋</h3><div class="welc">
+    <p><span>📸</span><span><b>Moments:</b> share photos from any EXO occasion. Tag people and add #hashtags so everyone can find them.</span></p>
+    <p><span>📅</span><span><b>Events:</b> RSVP in a few taps. Event photos land in the event's album.</span></p>
+    <p><span>✨</span><span><b>Memories:</b> monthly highlights, and your own EXO Memory card every year.</span></p>
+    <p><span>📲</span><span><b>Tip:</b> add Xverse to your Home Screen for one-tap access.</span></p></div>
+    <div class="btns"><button class="btn rose" data-close data-welcome style="flex:1">Let's go</button></div>`);
+}
 function afterOpen() {
   const guest = S.me && S.me.role === "guest";
   if (guest) { let shown = ""; try { shown = localStorage.getItem("xv-gnote"); } catch (e) {}
@@ -471,6 +485,7 @@ function afterOpen() {
         <div class="btns"><button class="btn ghost" data-switch>Switch account</button><button class="btn rose" data-close>Continue as guest</button></div>`);
       sh.addEventListener("click", ev => { if (ev.target.closest("[data-switch]")) sh.remove(); }); } }
   if (guest && S.tab !== "events") showTab("events");
+  if (S.me && S.me.role === "member" && !DEEP.ev && !DEEP.mem) welcomeCard();
   if (DEEP.mem && !deepDone && !guest) { deepDone = true; S.memYear = DEEP.mem; S.memOpenCard = true; return showTab("memories"); }
   if (DEEP.ev && !deepDone) {
     deepDone = true;
@@ -2123,7 +2138,7 @@ const RESOLVE = new URLSearchParams(location.search).get("resolve");
 if (RESOLVE) resolvePage(RESOLVE); else openApp();
 
 // ---- update checker: open copies (Home Screen app / old tab) move to the latest published version ----
-const XV_BUILD = "26c4b0ad28";
+const XV_BUILD = "826a543822";
 const UPD = { last: 0, ready: "" };
 (() => { const q = new URLSearchParams(location.search); if (!q.has("xvv")) return; q.delete("xvv"); const s = q.toString();
   try { history.replaceState(history.state, "", location.pathname + (s ? "?" + s : "") + location.hash); } catch (e) {} })();
