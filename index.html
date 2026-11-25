@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="xv-build" content="160e218f12">
+<meta name="xv-build" content="0c85eaa9a1">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15161f">
 <meta name="apple-mobile-web-app-title" content="Xverse">
@@ -991,7 +991,8 @@ function openEvent(id, opt) {
   const re = !S.preview ? e : Object.assign({}, e, { mine: undefined },
     e.ext ? { ext: Object.assign({}, e.ext, { needName: false, rate: "Normal", paid: false }), pay: Object.assign({}, e.pay, { amount: e.ext.newAmount || e.pay.amount }) } : {});
   const asked = e.act === "rsvp" || order;
-  const rb = asked && (e.aud !== false || S.preview) ? respondBlock(re) : null;
+  const canFill = core && (e.fill || []).length > 0;
+  const rb = asked && (e.aud !== false || S.preview || canFill) ? respondBlock(re) : null;
   const P = $("evPage");
   const page = () => `${S.preview ? `<div class="prevbar">Preview: this is what FCs see · <button class="linkbtn" data-unprev style="color:#e8a197">Back</button></div>` : ""}<div class="evcover"><button class="evback" data-evclose aria-label="Back"><svg class="m" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
     ${badge ? `<span class="bdg">${esc(badge)}</span>` : ""}<h2>${esc(e.title)}</h2><p>${order ? "Team order" + (e.max ? " · max " + e.max + " per person" : "") : esc(whenText(e))}</p></div>
@@ -1318,10 +1319,22 @@ function qHtml(q, a, locked) {
 function respondBlock(e) {
   const order = e.kind === "order", st = { status: e.mine ? e.mine.status : "", a: JSON.parse(JSON.stringify((e.mine && e.mine.answers) || {})), file: null };
   if (order && st.status === "withdrawn") st.status = "";
+  // core team: answer for anyone on the list (own form is the default); the server checks the list
+  const canFill = S.me && S.me.core && !S.preview && (e.fill || []).length > 0, myA = (S.me && S.me.alias) || "me";
+  st.who = ""; st.m = null; st.need = canFill && e.aud === false;
+  const aliasOf = n => ((e.fill || []).find(p => p.n === n) || {}).a || n;
   return { st, html: () => {
     const locked = e.closed || e.status === "cancelled";
     const showQ = order || st.status === "going";
+    const M = st.who ? st.m : e.mine;
     let h = "";
+    if (canFill) {
+      h += `<div class="card fm" style="text-align:left"><b>Answering for</b><select data-rfor>${st.need ? `<option value=""${st.who ? "" : " selected"} disabled>Choose who you're answering for</option>` : `<option value="">Me (${esc(myA)})</option>`}
+        ${e.fill.filter(p => p.n !== S.me.name).map(p => `<option value="${esc(p.n)}"${st.who === p.n ? " selected" : ""}>${esc(p.a)}</option>`).join("")}</select>
+        ${st.who ? `<p style="margin:6px 0 0">Results will show "filled in by ${esc(myA)}".</p>` : st.need ? `<p style="margin:6px 0 0">You're not on the invite list, but you can answer for anyone who is.</p>` : ""}</div>`;
+      if (st.loading) return h + `<p style="text-align:center;margin:0 0 14px">Loading…</p>`;
+      if (st.need && !st.who) return h;
+    }
     if (S.me && S.me.role === "guest") {
       if (st.gname === undefined) { st.gname = (e.mine && e.mine.answers && e.mine.answers._guest && e.mine.answers._guest.name) || ""; try { if (!st.gname) st.gname = localStorage.getItem("xv-gname") || ""; } catch (x) {} }
       h += `<div class="card fm" style="text-align:left"><b>Your name</b><input data-gname value="${esc(st.gname)}" maxlength="80" placeholder="Full name"${locked ? " disabled" : ""}></div>`;
@@ -1330,9 +1343,9 @@ function respondBlock(e) {
       if (st.xname === undefined) st.xname = "";
       h += `<div class="card fm" style="text-align:left"><b>Your full name</b><input data-xname value="${esc(st.xname)}" maxlength="80" placeholder="As registered for this event"${locked ? " disabled" : ""}></div>`;
     }
-    if (!order) h += `<div class="card" style="text-align:left"><b>Are you coming?</b>${e.deadline ? `<p style="margin:2px 0 8px">${locked ? "RSVP closed" : "Reply by " + esc(closesText(e))}</p>` : ""}
+    if (!order) h += `<div class="card" style="text-align:left"><b>${st.who ? "Is " + esc(aliasOf(st.who)) + " coming?" : "Are you coming?"}</b>${e.deadline ? `<p style="margin:2px 0 8px">${locked ? "RSVP closed" : "Reply by " + esc(closesText(e))}</p>` : ""}
       <div class="seg2 big stack"><button class="${st.status === "going" ? "on" : ""}" data-rs="going"${locked ? " disabled" : ""}>YES, COUNT ME IN 🎉</button><button class="${st.status === "not" ? "on" : ""}" data-rs="not"${locked ? " disabled" : ""}>Naur, it's not for me 🙈</button></div></div>`;
-    else h += `<div class="card" style="text-align:left"><b>${e.mine && e.mine.status === "ordered" ? "Your order" : "Place your order"}</b><p style="margin:2px 0 0">${locked ? "Orders closed" : "Closes " + esc(closesText(e))}${e.max ? ` · max ${e.max} per person` : ""}</p></div>`;
+    else h += `<div class="card" style="text-align:left"><b>${st.who ? esc(aliasOf(st.who)) + "'s order" : M && M.status === "ordered" ? "Your order" : "Place your order"}</b><p style="margin:2px 0 0">${locked ? "Orders closed" : "Closes " + esc(closesText(e))}${e.max ? ` · max ${e.max} per person` : ""}</p></div>`;
     if (showQ) h += (e.form || []).map(q => qHtml(q, st.a, locked)).join("");
     if (showQ && e.pay) {
       const t = liveTotal(e, st.a), xPay = e.ext && e.mine && e.mine.status === "going" && st.status === "going";
@@ -1363,7 +1376,10 @@ function respondBar(e, st) {
   if (e.closed || e.status === "cancelled") return "";
   const order = e.kind === "order";
   const t = (order || st.status === "going") ? liveTotal(e, st.a) : 0;
-  const label = order ? (e.mine && e.mine.status === "ordered" ? "Update order" : "Submit order") : (e.mine && e.mine.status ? "Update my RSVP" : "Save my RSVP");
+  if (st.need && !st.who) return "";                       // core, not invited: pick someone first
+  const M = st.who ? st.m : e.mine, forA = st.who ? ((e.fill || []).find(p => p.n === st.who) || {}).a : "";
+  const label = forA ? (order ? "Save order for " + forA : "Save RSVP for " + forA)
+    : order ? (M && M.status === "ordered" ? "Update order" : "Submit order") : (M && M.status ? "Update my RSVP" : "Save my RSVP");
   if (S.preview) return `<div class="evbar"><button class="btn ghost" disabled>Preview only · answers aren't saved</button></div>`;
   const consent = S.me && S.me.role === "guest" ? `<p class="consent">By registering, you agree that EXO may use your name and email to contact you about this event and future EXO events or opportunities. You may request for consent withdrawal at any time.</p>` : "";
   return `<div class="evbar" style="flex-direction:column;align-items:stretch">${consent}${t && (order || e.pay) ? `<div style="text-align:center;font-size:13px;color:var(--muted)">Total <b style="color:var(--ink)">${money(t)}</b></div>` : ""}<button class="btn rose" data-rsave${!order && !st.status ? " disabled" : ""}>${label}</button></div>`;
@@ -1373,14 +1389,15 @@ function copyText(t) {
   return new Promise((ok, no) => { const a = document.createElement("textarea"); a.value = t; a.style.cssText = "position:fixed;opacity:0"; document.body.appendChild(a); a.select();
     try { document.execCommand("copy") ? ok() : no(); } catch (x) { no(x); } a.remove(); });
 }
-async function sendProof(e, file) {
-  const r = await call("proofstart", { id: e.id, mime: file.type || "image/jpeg", size: file.size });
+async function sendProof(e, file, forName) {
+  const fx = forName ? { for: forName } : {};
+  const r = await call("proofstart", Object.assign({ id: e.id, mime: file.type || "image/jpeg", size: file.size }, fx));
   if (!r.ok) throw new Error(r.error);
   await new Promise((ok, no) => {
     const x = new XMLHttpRequest(); x.open("PUT", r.url); x.setRequestHeader("Content-Range", `bytes 0-${file.size - 1}/${file.size}`);
     x.onload = () => (x.status === 200 || x.status === 201) ? ok() : no(new Error("drive_" + x.status)); x.onerror = () => no(new Error("network")); x.send(file);
   });
-  const d = await call("proofdone", { uploadId: r.uploadId });
+  const d = await call("proofdone", Object.assign({ uploadId: r.uploadId, id: e.id }, fx));
   if (!d.ok) throw new Error(d.error);
   return d.mine;
 }
@@ -1417,12 +1434,18 @@ function wireRespond(e, rb, redraw) {
         if ((st.xname || "").trim().length < 2) { b.disabled = false; redraw(); return toast("Please add your full name"); }
         body.name = st.xname.trim();
       }
+      if (st.who) body.for = st.who;
       let r = await call("respond", body).catch(() => ({}));
       if (!r.ok) {
         b.disabled = false;
         const q = (e.form || []).find(x => x.id === r.q);
         redraw();
         return toast({ required: q ? `Please answer "${q.label}"` : "Please answer the required questions", over_max: `Max ${e.max} per person`, empty_order: "Please pick at least one item", closed: "Sorry, this has closed", guest_name: "Please add your name", need_name: "Please add your full name", name_taken: "That name is on the EXO list. Please sign in with your own EXO account" }[r.error] || "Couldn't save. Try again");
+      }
+      if (st.who) {                                      // saved for someone else: my own answer and the list stay as they are
+        st.m = r.mine;
+        if (st.file) { try { st.m = await sendProof(e, st.file, st.who); st.file = null; } catch (err) { toast("Saved, but the screenshot didn't upload. Try again"); } }
+        redraw(); return toast("Saved for " + ((e.fill || []).find(p => p.n === st.who) || {}).a);
       }
       e.mine = r.mine;
       if (e.ext && body.name) e.ext.needName = false;
@@ -1439,6 +1462,14 @@ function wireRespond(e, rb, redraw) {
     if (t.dataset.xname !== undefined) st.xname = t.value;
   };
   const onChange = ev => {
+    if (ev.target.dataset.rfor !== undefined) {
+      st.who = ev.target.value; st.file = null;
+      const fill = m => { st.status = m ? m.status : ""; if (e.kind === "order" && st.status === "withdrawn") st.status = ""; st.a = JSON.parse(JSON.stringify((m && m.answers) || {})); delete st.a._by; delete st.a._guest; };
+      if (!st.who) { st.m = null; fill(e.mine); return redraw(); }
+      st.loading = true; redraw();
+      return call("mineof", { id: e.id, for: st.who }).then(r => { st.m = r && r.ok ? r.mine : null; }).catch(() => { st.m = null; toast("Couldn't load their answer. Try again"); })
+        .then(() => { st.loading = false; fill(st.m); redraw(); });
+    }
     if (ev.target.id !== "pfIn") return;
     const f = ev.target.files[0]; ev.target.value = "";
     if (!f) return;
@@ -1477,7 +1508,7 @@ function openResults(e) {
     }).join("");
     const pay = e.pay ? `<div class="card" style="text-align:left"><b>Payment proof</b><div class="rrow"><span>Uploaded</span><b style="color:#2f8f6b">${going.filter(x => x.proof).length}</b></div><div class="rrow"><span>Missing</span><b style="color:var(--bad)">${going.filter(x => !x.proof).length}</b></div></div>` : "";
     const bu = x => e.ext && x.proof && x.group === "core team";
-    const people = list => `<div class="card" style="text-align:left">${list.map(x => `<div class="rrow"><span>${esc(x.name || x.a)}</span><span>${x.total && !bu(x) ? money(x.total) + " " : ""}${bu(x) ? `<small>paid by BU</small>` : e.pay && (x.status === "going" || x.status === "ordered") ? (x.proofLive ? `<button class="linkbtn" data-pv="${esc(x.who)}">view proof</button>` : x.proof ? `<small>paid ✓</small>` : `<small style="color:var(--bad)">no proof</small>`) : `<small>${esc(x.g || x.group || "")}</small>`}</span></div>`).join("") || `<p style="margin:0">No one here.</p>`}</div>`;
+    const people = list => `<div class="card" style="text-align:left">${list.map(x => `<div class="rrow"><span>${esc(x.name || x.a)}${x.by ? `<br><small>filled in by ${esc(x.by)}</small>` : ""}</span><span>${x.total && !bu(x) ? money(x.total) + " " : ""}${bu(x) ? `<small>paid by BU</small>` : e.pay && (x.status === "going" || x.status === "ordered") ? (x.proofLive ? `<button class="linkbtn" data-pv="${esc(x.who)}">view proof</button>` : x.proof ? `<small>paid ✓</small>` : `<small style="color:var(--bad)">no proof</small>`) : `<small>${esc(x.g || x.group || "")}</small>`}</span></div>`).join("") || `<p style="margin:0">No one here.</p>`}</div>`;
     const draw = () => {
       const B = $("rsB"); if (!B) return;
       let h = `<div class="tiles">${tiles.map(([l, n, k]) => `<button class="${view === k && k ? "on" : ""}" data-tv="${k}"${k ? "" : " disabled"}><b>${n}</b><span>${l}</span></button>`).join("")}</div>`;
@@ -2211,7 +2242,7 @@ const RESOLVE = new URLSearchParams(location.search).get("resolve");
 if (RESOLVE) resolvePage(RESOLVE); else openApp();
 
 // ---- update checker: open copies (Home Screen app / old tab) move to the latest published version ----
-const XV_BUILD = "160e218f12";
+const XV_BUILD = "0c85eaa9a1";
 const UPD = { last: 0, ready: "" };
 (() => { const q = new URLSearchParams(location.search); if (!q.has("xvv")) return; q.delete("xvv"); const s = q.toString();
   try { history.replaceState(history.state, "", location.pathname + (s ? "?" + s : "") + location.hash); } catch (e) {} })();
